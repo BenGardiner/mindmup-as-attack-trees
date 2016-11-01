@@ -44,7 +44,7 @@ def do_ideas(depth, cuts, node):
 
 def is_cut(title, cuts):
 	for cut in cuts:
-		if title.startswith("%s." % cut):
+		if title.startswith("%s" % cut):
 			return True
 	
 	return False
