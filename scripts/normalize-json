@@ -1,0 +1,5 @@
+#!/bin/bash
+
+#TODO: sort the JSON to make diffs more stable
+
+python -c 'import sys,json; print(json.dumps(json.load(sys.stdin)))' | underscore print
