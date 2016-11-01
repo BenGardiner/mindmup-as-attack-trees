@@ -5,7 +5,7 @@ Python scripts for using mindmup JSON as a medium for developing attack trees
 
 In general:
 
-1. Create an attack tree with [mindmup](mindmup.com)
+1. Create an attack tree with [mindmup](https://app.mindmup.com/map/new/)
 
 1. Download it, add numbers to it and generate a report template from it.
 
@@ -15,7 +15,7 @@ In general:
 
 In detail:
 
-1. collaborate on (this was alot better before mindmup 2.0), or otherwise create an attack tree in [mindmup](mindmup.com).
+1. collaborate on (this was alot better before mindmup 2.0), or otherwise create an attack tree in [mindmup](https://app.mindmup.com/map/new/).
 	* It is best if this tree is stable, making large changes to it will make it hard to update the derived documents generated in later steps.
 	* There are some special strings and properties that will be recognized by the processing later:
 		* ```AND``` for an and-ing operation on subtrees
@@ -39,7 +39,7 @@ In detail:
 
 	e.g. ```mkdir examples/steps/3_Report && cd examples/steps/3_Report && ../../../scripts/generate-descriptions-template.md 2.0 2.1 < ../2_Compromise\ \(P\)RNG\ Somehow.mup > Report.md```
 
-1. for each of the subtree snapshot ```.mup``` files: render a .png file at [mindmup](mindmup.com) and save them (e.g. ```A.mup``` to ```A.png```).
+1. for each of the subtree snapshot ```.mup``` files: render a .png file at [mindmup](https://app.mindmup.com/map/new/) and save them (e.g. ```A.mup``` to ```A.png```).
 
 1. iteratively edit the template, including descriptions, impacts, severities etc. to achieve a draft report
 
