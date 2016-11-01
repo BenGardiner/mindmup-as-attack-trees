@@ -1,0 +1,347 @@
+{
+  "id": "root",
+  "formatVersion": 3,
+  "ideas": {
+    "1": {
+      "id": 1,
+      "title": "Compromise (P)RNG Somehow",
+      "attr": {},
+      "ideas": {
+        "1": {
+          "title": "Software RNG",
+          "id": 2,
+          "ideas": {
+            "1": {
+              "title": "Replace Output with Constant Value ('Pinning')",
+              "id": 7,
+              "ideas": {
+                "1": {
+                  "title": "Tamper RNG Executable Code",
+                  "id": 15
+                },
+                "2": {
+                  "title": "Tamper with Client-of-RNG Code",
+                  "id": 16
+                },
+                "3": {
+                  "title": "(Generally) Tamper with RNG data",
+                  "id": 17,
+                  "ideas": {
+                    "1": {
+                      "title": "Continuous RNG state reset",
+                      "id": 18
+                    },
+                    "2": {
+                      "title": "(other, implementation and integration specific)",
+                      "id": 19,
+                      "attr": {
+                        "style": {
+                          "background": "#000000"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "2": {
+              "title": "Exploit RNG Output Known Sequences",
+              "id": 8,
+              "ideas": {
+                "1": {
+                  "title": "RNG Seed Source Jamming",
+                  "id": 20
+                },
+                "2": {
+                  "title": "RNG State Jamming",
+                  "id": 21
+                },
+                "3": {
+                  "title": "Guessing known Sequence from Observed Output",
+                  "id": 22,
+                  "ideas": {
+                    "1": {
+                      "title": "AND",
+                      "id": 23,
+                      "ideas": {
+                        "1": {
+                          "title": "Observe Output of RNG",
+                          "id": 24
+                        },
+                        "2": {
+                          "title": "Infer next values from observations",
+                          "id": 25
+                        }
+                      },
+                      "attr": {
+                        "icon": {
+                          "url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADQAAAAfCAYAAACoE+4eAAABuUlEQVRYR93Zv0tWcRTH8dfjoCQUhC3N/QVOLVoJYkXh0ORU5NAgTdEmrRYYCGoiNRUOrqK0ufYXKERke+QQBGEYIifuBRH08cHv95rf7/pczrnv8+Nzvvc8LWnOBVzHKG7iGi6hlcb8PyubGMKP42ye1mEXbuApbuEvPuNL5fhPIqB7uFgFKxvQZTzDBLbxHqvYwu9EILWZWdzGQK4MXcUM7uMDXuNbYoiD5uYxjMEcQH1YrBy8wDukKq2jYpINqBuv8ATP8RZ7GTNTm84G9KAqsQVMYrcBmHBRA0UPRb8eeTpRuStYq6Q45Pl7QzDhJkThIT5iJxXQY7zBOJYbhKmBosy/VqPh1BnqxUo1C+7gZ8NAUXIh2+E7Scn1Yx3TeNkwTJYeinTHrIkIfTpDoGRzKFStHmxNikEW2Q4lDHWLPrrbTmUyZa+jORQvedzpwRQ2MNbQID38Ph0B/TpBVCM7S3h0gmdzPNIRUHEZahfRc9dD7YDi96JULoCKm0PF3RSKu8tF2RV12w6g4r6HAqqoL9YAKm6nEFBFbX3qIVzUXq6GanJzOoeRnJvTGqqo3fbBO+B/8+/DPl7Zkxr5jenfAAAAAElFTkSuQmCC",
+                          "width": 52,
+                          "height": 31,
+                          "position": "center"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "11": {
+          "title": "Hardware RNG",
+          "id": 3,
+          "ideas": {
+            "1": {
+              "title": "Replace Output with Constant Value ('Pinning')",
+              "id": 9,
+              "ideas": {},
+              "attr": {
+                "style": {
+                  "background": "#000000"
+                }
+              }
+            },
+            "2": {
+              "title": "Exploit RNG Output Known Sequences",
+              "id": 14,
+              "attr": {
+                "style": {
+                  "background": "#000000"
+                }
+              }
+            }
+          }
+        },
+        "21": {
+          "title": "SW/HW Hybrid",
+          "id": 4,
+          "ideas": {
+            "1": {
+              "title": "(some combination of the above) (*)",
+              "id": 6,
+              "attr": {
+                "style": {
+                  "background": "#ffffff"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "attr": {
+    "theme": "straightlines"
+  },
+  "title": "Compromise (P)RNG Somehow",
+  "theme": {
+    "name": "MindMup Straight Lines",
+    "node": [
+      {
+        "name": "default",
+        "cornerRadius": 10,
+        "backgroundColor": "#E0E0E0",
+        "border": {
+          "type": "surround",
+          "line": {
+            "color": "#707070",
+            "width": 1
+          }
+        },
+        "shadow": [
+          {
+            "color": "#070707",
+            "opacity": 0.4,
+            "offset": {
+              "width": 2,
+              "height": 2
+            },
+            "radius": 2
+          }
+        ],
+        "text": {
+          "margin": 5,
+          "alignment": "center",
+          "color": "#4F4F4F",
+          "lightColor": "#EEEEEE",
+          "darkColor": "#000000",
+          "font": {
+            "lineSpacing": 2.5,
+            "size": 9,
+            "weight": "bold"
+          }
+        },
+        "connections": {
+          "default": {
+            "h": "nearest",
+            "v": "center"
+          },
+          "from": {
+            "horizontal": {
+              "h": "nearest",
+              "v": "center"
+            }
+          },
+          "to": {
+            "h": "nearest",
+            "v": "center"
+          }
+        },
+        "decorations": {
+          "height": 20,
+          "edge": "top",
+          "overlap": true,
+          "position": "end"
+        }
+      },
+      {
+        "name": "level_1",
+        "backgroundColor": "#22AAE0"
+      },
+      {
+        "name": "activated",
+        "border": {
+          "type": "surround",
+          "line": {
+            "color": "#22AAE0",
+            "width": 3,
+            "style": "dotted"
+          }
+        }
+      },
+      {
+        "name": "level_1.activated",
+        "border": {
+          "type": "surround",
+          "line": {
+            "color": "#EEEEEE",
+            "width": 3,
+            "style": "dotted"
+          }
+        }
+      },
+      {
+        "name": "selected",
+        "shadow": [
+          {
+            "color": "#000000",
+            "opacity": 0.9,
+            "offset": {
+              "width": 2,
+              "height": 2
+            },
+            "radius": 2
+          }
+        ]
+      },
+      {
+        "name": "collapsed",
+        "shadow": [
+          {
+            "color": "#888888",
+            "offset": {
+              "width": 0,
+              "height": 1
+            },
+            "radius": 0
+          },
+          {
+            "color": "#FFFFFF",
+            "offset": {
+              "width": 0,
+              "height": 3
+            },
+            "radius": 0
+          },
+          {
+            "color": "#888888",
+            "offset": {
+              "width": 0,
+              "height": 4
+            },
+            "radius": 0
+          },
+          {
+            "color": "#FFFFFF",
+            "offset": {
+              "width": 0,
+              "height": 6
+            },
+            "radius": 0
+          },
+          {
+            "color": "#888888",
+            "offset": {
+              "width": 0,
+              "height": 7
+            },
+            "radius": 0
+          }
+        ]
+      },
+      {
+        "name": "collapsed.selected",
+        "shadow": [
+          {
+            "color": "#FFFFFF",
+            "offset": {
+              "width": 0,
+              "height": 1
+            },
+            "radius": 0
+          },
+          {
+            "color": "#888888",
+            "offset": {
+              "width": 0,
+              "height": 3
+            },
+            "radius": 0
+          },
+          {
+            "color": "#FFFFFF",
+            "offset": {
+              "width": 0,
+              "height": 6
+            },
+            "radius": 0
+          },
+          {
+            "color": "#555555",
+            "offset": {
+              "width": 0,
+              "height": 7
+            },
+            "radius": 0
+          },
+          {
+            "color": "#FFFFFF",
+            "offset": {
+              "width": 0,
+              "height": 10
+            },
+            "radius": 0
+          },
+          {
+            "color": "#333333",
+            "offset": {
+              "width": 0,
+              "height": 11
+            },
+            "radius": 0
+          }
+        ]
+      }
+    ],
+    "connector": {
+      "default": {
+        "type": "straight",
+        "line": {
+          "color": "#707070",
+          "width": 1
+        }
+      }
+    }
+  }
+}
