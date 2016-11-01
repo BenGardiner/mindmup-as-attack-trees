@@ -7,8 +7,9 @@ tops = list()
 
 def truncate(node, cuts, first):
 	if not first and is_cut(node.get('title',''), cuts) and 'ideas' in node:
-		#TODO: don't delete the childer, mark them as collapsed
-		del node['ideas']
+		if not 'attr' in node:
+			node.update({'attr': dict()})
+		node['attr'].update({'collapsed': True})
 
 	for key, value in node.get('ideas', dict()).iteritems():
 		truncate(value, cuts, False)
