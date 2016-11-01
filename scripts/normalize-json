@@ -1,5 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env python
 
-#TODO: sort the JSON to make diffs more stable
+import sys,json
+from collections import OrderedDict
 
-python -c 'import sys,json; print(json.dumps(json.load(sys.stdin)))' | underscore print
+data = json.load(sys.stdin)
+
+print(json.dumps(data, sort_keys=True, indent=2))
+
