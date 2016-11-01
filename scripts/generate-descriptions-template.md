@@ -23,7 +23,8 @@ def emit_tree_snapshot(title, node):
 	truncated = truncate(copy.deepcopy(node), cuts, True)
 
 	#TODO: include also the 'theme' from the graphic
-	truncated.update({'resources': resources})
+	if not resources is None:
+		truncated.update({'resources': resources})
 
 	truncated.update({'attr' : { 'theme': 'straightlines'}})
 
@@ -115,7 +116,9 @@ def do_tops():
 cuts = sys.argv[1:]
 data = json.load(sys.stdin)
 
-resources = data['resources']
+resources = None
+if 'resources' in data:
+	resources = data['resources']
 #TODO: theme
 
 if 'id' in data and data['id'] == 'root':
