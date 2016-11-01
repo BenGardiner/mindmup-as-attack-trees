@@ -41,7 +41,7 @@ data = json.load(sys.stdin)
 
 if 'id' in data and data['id'] == 'root':
 	#version 2 mindmup
-	do_ideas(depth, data['ideas'][1])
+	do_ideas(depth, data['ideas']['1'])
 else:
 	do_ideas(depth, data)
 
