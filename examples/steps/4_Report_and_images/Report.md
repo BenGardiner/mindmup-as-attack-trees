@@ -29,6 +29,24 @@
 ### Suggested Mitigation
 
 
+## Attack Description: Node 2.2 Replace Output with Constant Value ('Pinning')
+
+### Attack Classification
+
+### Attack Threat
+
+### Suggested Mitigation
+
+
+## Attack Description: Node 2.3 Exploit RNG Output Known Sequences
+
+### Attack Classification
+
+### Attack Threat
+
+### Suggested Mitigation
+
+
 ## Attack Description: Node 1.2 SW/HW Hybrid
 
 ### Attack Classification
@@ -148,25 +166,3 @@
 ### Attack Threat
 
 ### Suggested Mitigation
-
-
-# Attack Description: Node 2.2 Replace Output with Constant Value ('Pinning')
-
-![2.2 Replace Output with Constant Value ('Pinning') tree snapshot](2.2 Replace Output with Constant Value ('Pinning').png)
-
-## Attack Classification
-
-## Attack Threat
-
-## Suggested Mitigation
-
-
-# Attack Description: Node 2.3 Exploit RNG Output Known Sequences
-
-![2.3 Exploit RNG Output Known Sequences tree snapshot](2.3 Exploit RNG Output Known Sequences.png)
-
-## Attack Classification
-
-## Attack Threat
-
-## Suggested Mitigation
