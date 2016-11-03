@@ -44,7 +44,12 @@ def do_ideas(depth, cuts, node):
 
 def is_cut(title, cuts):
 	for cut in cuts:
-		if title.startswith("%s" % cut):
+		if cut.endswith('.'):
+			match_pattern='%s'
+		else:
+			match_pattern='%s '
+
+		if title.startswith(match_pattern % cut):
 			return True
 	
 	return False
