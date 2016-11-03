@@ -23,7 +23,22 @@ def trim_label(node):
 	node.update({'title': re.sub(r'^\d\..*?\s','',node.get('title', ''))})
 	return
 
-data = json.load(sys.stdin)
+if len(sys.argv) < 1:
+	fd_in=sys.stdin
+else:
+	fd_in=open(sys.argv[1], 'r')
+
+data = json.load(fd_in)
+
+if len(sys.argv) < 1:
+	fd_out = sys.stdout
+else:
+	fd_in.close()
+	fd_out=open(sys.argv[1],'w')
+
 do_ideas(data)
-print(json.dumps(data))
+fd_out.write(json.dumps(data, indent=2, sort_keys=True))
+
+if len(sys.argv) >= 1:
+	fd_out.close()
 

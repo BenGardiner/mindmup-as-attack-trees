@@ -37,7 +37,19 @@ def add_label(depth, node):
 	return
 
 depth=0
-data = json.load(sys.stdin)
+
+if len(sys.argv) < 1:
+	fd_in=sys.stdin
+else:
+	fd_in=open(sys.argv[1], 'r')
+
+data = json.load(fd_in)
+
+if len(sys.argv) < 1:
+	fd_out = sys.stdout
+else:
+	fd_in.close()
+	fd_out=open(sys.argv[1],'w')
 
 if 'id' in data and data['id'] == 'root':
 	#version 2 mindmup
@@ -45,5 +57,8 @@ if 'id' in data and data['id'] == 'root':
 else:
 	do_ideas(depth, data)
 
-print(json.dumps(data))
+fd_out.write(json.dumps(data, indent=2, sort_keys=True))
+
+if len(sys.argv) >= 1:
+	fd_out.close()
 
