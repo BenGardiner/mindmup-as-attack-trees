@@ -13,10 +13,8 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "canvas": "^1.6.2",
-    "d3": "^4.3.0",
+    "d3-node": "^0.2.0",
     "fs": "0.0.1-security",
-    "slug": "^0.9.1",
-    "topojson": "^2.0.0"
+    "svg2png": "^4.0.0"
   }
 }
