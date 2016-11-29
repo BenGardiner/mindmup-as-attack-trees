@@ -95,6 +95,9 @@
           "ideas": {
             "1": {
               "attr": {
+                "note": {
+                  "text": "here is a description\n\n### Attack Classification\n some classification\n\n### Attack Threat\n some threat analysis\n\n### Mitigation Required\nmitigations\n\nEVITA:: |4|0|0|0|4|6|0|0|0"
+                },
                 "style": {
                   "background": "#000000"
                 }
