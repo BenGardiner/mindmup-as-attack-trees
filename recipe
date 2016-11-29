@@ -1,0 +1,11 @@
+#!/bin/bash
+
+die() {
+	echo "$@"
+	exit 1
+}
+
+cp examples/Compromise\ \(P\)RNG\ Somehow.mup examples/steps/0_Compromise\ \(P\)RNG\ Somehow.mup || die
+./scripts/normalize-json < examples/steps/0_Compromise\ \(P\)RNG\ Somehow.mup > examples/steps/1_Compromise\ \(P\)RNG\ Somehow.mup || die
+./scripts/add-numbered-ids.py < examples/steps/1_Compromise\ \(P\)RNG\ Somehow.mup | ./scripts/normalize-json > examples/steps/2_Compromise\ \(P\)RNG\ Somehow.mup || die
+cd examples/steps/3_Report && ../../../scripts/generate-descriptions-md-template 2.0 2.1 < ../2_Compromise\ \(P\)RNG\ Somehow.mup > Report.md && cd - > /dev/null || die
