@@ -2,6 +2,8 @@
 
 import sys,json
 import copy
+import html2text
+from bs4 import BeautifulSoup
 
 tops = list()
 
@@ -76,7 +78,7 @@ def add_label(depth, cuts, node):
 		do_ideas(depth, cuts, node)
 		return
 
-	description = node.get('attr', dict()).get('attachment', dict()).get('content', '')
+	description = get_description(node)
 	print_title_headings(level, working_title)
 	print_other_headings(level, description)
 
@@ -89,15 +91,54 @@ def print_title_headings(level,title):
 	print("\n\n%s Attack Description: Node %s" % ('#' * (level), title ))
 
 def print_other_headings(level, description):
-	if not description == '':
-		print("\n%s" % description)
-	print("\n%s Attack Classification" % ('#' * (level+1)))
-	print("\n%s Attack Threat" % ('#' * (level+1)))
-	print("\n%s Suggested Mitigation" % ('#' * (level+1)))
+	description_lines = description.splitlines()
+
+	classification_heading_found=False
+	threat_heading_found=False
+	mitigation_heading_found=False
+	for description_line in description_lines:
+		if "# Attack Classification".lower() in description_line.lower() or description_line.strip().lower().endswith("Attack Classification:".lower()):
+			classification_heading_found=True
+			print("\n%s Attack Classification" % ('#' * (level+1)))
+		elif "# Attack Threat".lower() in description_line.lower() or description_line.strip().lower().endswith("Attack Threat:".lower()):
+			threat_heading_found=True
+			print("\n%s Attack Threat" % ('#' * (level+1)))
+		elif "# Mitigation Required".lower() in description_line.lower() or description_line.strip().lower().endswith("Mitigation Required:".lower()):
+			mitigation_heading_found=True
+			print("\n%s Mitigation Required" % ('#' * (level+1)))
+		elif "EVITA:: " in description_line:
+			#TODO: catalog EVITAs
+			evita = description.split('|')
+		elif description_line.strip().lower().endswith("Description:".lower()):
+			continue # skip Description: lines, all lines are emitted under a 'Attack Description' heading
+		else:
+			print(description_line)
+
+	
+	if not classification_heading_found:
+		print("\n%s Attack Classification" % ('#' * (level+1)))
+	if not threat_heading_found:
+		print("\n%s Attack Threat" % ('#' * (level+1)))
+	if not mitigation_heading_found:
+		print("\n%s Mitigation Required" % ('#' * (level+1)))
 
 def add_graphic(node, title):
 	emit_tree_snapshot(title, node)
 	print("\n![%s tree snapshot](%s.png)" % (title, title.replace("?", "_")))
+
+def detect_html(text):
+	return bool(BeautifulSoup(text, "html.parser").find())
+
+def get_description(node):
+	#prefer the mindmup 2.0 'note' to the 1.0 'attachment'
+	description = node.get('attr', dict()).get('note', dict()).get('text', '')
+	if description is '':
+		description = node.get('attr', dict()).get('attachment', dict()).get('content', '')
+
+	if detect_html(description):
+		description = html2text.html2text(description)
+	
+	return description
 
 def do_tops():
 	global tops
@@ -112,7 +153,7 @@ def do_tops():
 
 		print_title_headings(heading_level, title)
 		add_graphic(node, title)
-		description = node.get('attr', dict()).get('attachment', dict()).get('content', '')
+		description = get_description(node)
 		print_other_headings(heading_level, description)
 
 		do_ideas(depth, cuts, node)
@@ -124,7 +165,7 @@ data = json.load(sys.stdin)
 resources = None
 if 'resources' in data:
 	resources = data['resources']
-#TODO: theme
+#TODO: capture the theme to transfer it to the subtree snapshots
 
 if 'id' in data and data['id'] == 'root':
 	#version 2 mindmup
