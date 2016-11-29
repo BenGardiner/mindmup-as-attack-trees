@@ -8,7 +8,7 @@
 
 ## Attack Threat
 
-## Suggested Mitigation
+## Mitigation Required
 
 
 ## Attack Description: Node 1.0 Software RNG
@@ -17,7 +17,7 @@
 
 ### Attack Threat
 
-### Suggested Mitigation
+### Mitigation Required
 
 
 ## Attack Description: Node 1.1 Hardware RNG
@@ -26,16 +26,24 @@
 
 ### Attack Threat
 
-### Suggested Mitigation
+### Mitigation Required
 
 
 ## Attack Description: Node 2.2 Replace Output with Constant Value ('Pinning')
+here is a description
+
 
 ### Attack Classification
+ some classification
+
 
 ### Attack Threat
+ some threat analysis
 
-### Suggested Mitigation
+
+### Mitigation Required
+mitigations
+
 
 
 ## Attack Description: Node 2.3 Exploit RNG Output Known Sequences
@@ -44,7 +52,7 @@
 
 ### Attack Threat
 
-### Suggested Mitigation
+### Mitigation Required
 
 
 ## Attack Description: Node 1.2 SW/HW Hybrid
@@ -53,7 +61,7 @@
 
 ### Attack Threat
 
-### Suggested Mitigation
+### Mitigation Required
 
 
 # Attack Description: Node 2.0 Replace Output with Constant Value ('Pinning')
@@ -64,7 +72,7 @@
 
 ## Attack Threat
 
-## Suggested Mitigation
+## Mitigation Required
 
 
 ## Attack Description: Node 3.0 Tamper RNG Executable Code
@@ -73,7 +81,7 @@
 
 ### Attack Threat
 
-### Suggested Mitigation
+### Mitigation Required
 
 
 ## Attack Description: Node 3.1 Tamper with Client-of-RNG Code
@@ -82,7 +90,7 @@
 
 ### Attack Threat
 
-### Suggested Mitigation
+### Mitigation Required
 
 
 ## Attack Description: Node 3.2 (Generally) Tamper with RNG data
@@ -91,7 +99,7 @@
 
 ### Attack Threat
 
-### Suggested Mitigation
+### Mitigation Required
 
 
 ## Attack Description: Node 4.0 Continuous RNG state reset
@@ -100,7 +108,7 @@
 
 ### Attack Threat
 
-### Suggested Mitigation
+### Mitigation Required
 
 
 ## Attack Description: Node 4.1 (other, implementation and integration specific)
@@ -109,7 +117,7 @@
 
 ### Attack Threat
 
-### Suggested Mitigation
+### Mitigation Required
 
 
 # Attack Description: Node 2.1 Exploit RNG Output Known Sequences
@@ -120,7 +128,7 @@
 
 ## Attack Threat
 
-## Suggested Mitigation
+## Mitigation Required
 
 
 ## Attack Description: Node 3.3 RNG Seed Source Jamming
@@ -129,7 +137,7 @@
 
 ### Attack Threat
 
-### Suggested Mitigation
+### Mitigation Required
 
 
 ## Attack Description: Node 3.4 RNG State Jamming
@@ -138,7 +146,7 @@
 
 ### Attack Threat
 
-### Suggested Mitigation
+### Mitigation Required
 
 
 ## Attack Description: Node 3.5 Guessing known Sequence from Observed Output
@@ -147,7 +155,7 @@
 
 ### Attack Threat
 
-### Suggested Mitigation
+### Mitigation Required
 
 
 ## Attack Description: Node 5.0 Observe Output of RNG
@@ -156,7 +164,7 @@
 
 ### Attack Threat
 
-### Suggested Mitigation
+### Mitigation Required
 
 
 ## Attack Description: Node 5.1 Infer next values from observations
@@ -165,4 +173,4 @@
 
 ### Attack Threat
 
-### Suggested Mitigation
+### Mitigation Required
