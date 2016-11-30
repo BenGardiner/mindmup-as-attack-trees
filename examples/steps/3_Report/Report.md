@@ -174,3 +174,13 @@ mitigations
 ### Attack Threat
 
 ### Mitigation Required
+
+
+# EVITA Chart
+ The following is the EVITA chart for the above tree.
+
+Node | **FS** | **OS** | **PS** | **SS** | **ET** | **E** | **K** | **WO** | **EQ** | **APT** | **AP** | **CO** | **FR** | **OR** | **PR** | **SR**
+----|---|---|---|---|----|---|---|----|----|-----|----|----|---|---|---|---
+2.2 Replace Output with Constant Value ('Pinning')|4|0|0|0|4|6|0|0|0|10|4|0|5|0|0|0
+
+**FS** = Financial Severity **OS** = Operational Severity **PS** = Privacy Severity **SS** = Safety Severity **ET** = Elapsed Time **E** = Expertise **K** = Knowledge **WO** = Window of Opportuntiy **EQ** = Equiptment Required **APT** = Attack Potential Total **AP** = Attack Probability **CO** = Controlability (Safety) **FR** = Financial Risk **OR** = Operational Risk **PR** = PrivacyRisk **SR** = Safety Risk 
