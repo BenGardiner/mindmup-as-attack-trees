@@ -114,15 +114,19 @@ def print_other_headings(level, title, description):
 	classification_heading_found=False
 	threat_heading_found=False
 	mitigation_heading_found=False
+	previous_blank=False
 	for description_line in description_lines:
 		if "# Attack Classification".lower() in description_line.lower() or description_line.strip().lower().endswith("Attack Classification:".lower()):
 			classification_heading_found=True
+			previous_blank=True
 			print("\n%s Attack Classification" % ('#' * (level+1)))
 		elif "# Attack Threat".lower() in description_line.lower() or description_line.strip().lower().endswith("Attack Threat:".lower()):
 			threat_heading_found=True
+			previous_blank=True
 			print("\n%s Attack Threat" % ('#' * (level+1)))
-		elif "# Mitigation Required".lower() in description_line.lower() or description_line.strip().lower().endswith("Mitigation Required:".lower()):
+		elif "# Mitigation Required".lower() in description_line.lower() or description_line.strip().lower().replace("mitigations","mitigation").endswith("Mitigation Required:".lower()):
 			mitigation_heading_found=True
+			previous_blank=True
 			print("\n%s Mitigation Required" % ('#' * (level+1)))
 		elif "EVITA:: " in description_line:
 			evita_line = description.split('|')
@@ -140,8 +144,14 @@ def print_other_headings(level, title, description):
 			evita_tags.append(evita_tag)
 		elif description_line.strip().lower().endswith("Description:".lower()):
 			continue # skip Description: lines, all lines are emitted under a 'Attack Description' heading
+		elif description_line.strip() == "":
+			if not previous_blank:
+				print(description_line)
+				previous_blank=True
+			continue # skip blank lines
 		else:
 			print(description_line)
+			previous_blank=False
 
 	
 	if not classification_heading_found:
