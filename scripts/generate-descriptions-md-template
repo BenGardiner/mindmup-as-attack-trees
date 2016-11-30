@@ -5,6 +5,9 @@ import copy
 import html2text
 from bs4 import BeautifulSoup
 
+text_maker = html2text.HTML2Text()
+text_maker.body_width = 0 #disable random line-wrapping from html2text
+
 tops = list()
 
 def truncate(node, cuts, first):
@@ -143,13 +146,15 @@ def detect_html(text):
 	return bool(BeautifulSoup(text, "html.parser").find())
 
 def get_description(node):
+	global text_maker
+
 	#prefer the mindmup 2.0 'note' to the 1.0 'attachment'
 	description = node.get('attr', dict()).get('note', dict()).get('text', '')
 	if description is '':
 		description = node.get('attr', dict()).get('attachment', dict()).get('content', '')
 
 	if detect_html(description):
-		description = html2text.html2text(description)
+		description = text_maker.handle(description)
 	
 	return description
 
