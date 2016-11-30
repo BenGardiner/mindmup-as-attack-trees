@@ -80,7 +80,7 @@ def add_label(depth, cuts, node):
 
 	description = get_description(node)
 	print_title_headings(level, working_title)
-	print_other_headings(level, description)
+	print_other_headings(level, working_title, description)
 
 	collapsed = node.get('attr', dict()).get('collapsed', False)
 	if not collapsed:
@@ -90,7 +90,9 @@ def add_label(depth, cuts, node):
 def print_title_headings(level,title):
 	print("\n\n%s Attack Description: Node %s" % ('#' * (level), title ))
 
-def print_other_headings(level, description):
+def print_other_headings(level, title, description):
+	global evita_tags
+
 	description_lines = description.splitlines()
 
 	classification_heading_found=False
@@ -107,8 +109,19 @@ def print_other_headings(level, description):
 			mitigation_heading_found=True
 			print("\n%s Mitigation Required" % ('#' * (level+1)))
 		elif "EVITA:: " in description_line:
-			#TODO: catalog EVITAs
-			evita = description.split('|')
+			evita_line = description.split('|')
+			evita_tag = dict()
+			evita_tag['Node'] = title
+			evita_tag['FS'] = int(evita_line[1])
+			evita_tag['OS'] = int(evita_line[2])
+			evita_tag['PS'] = int(evita_line[3])
+			evita_tag['SS'] = int(evita_line[4])
+			evita_tag['ET'] = int(evita_line[5])
+			evita_tag['E']  = int(evita_line[6])
+			evita_tag['K']  = int(evita_line[7])
+			evita_tag['WO'] = int(evita_line[8])
+			evita_tag['EQ'] = int(evita_line[9])
+			evita_tags.append(evita_tag)
 		elif description_line.strip().lower().endswith("Description:".lower()):
 			continue # skip Description: lines, all lines are emitted under a 'Attack Description' heading
 		else:
@@ -154,10 +167,75 @@ def do_tops():
 		print_title_headings(heading_level, title)
 		add_graphic(node, title)
 		description = get_description(node)
-		print_other_headings(heading_level, description)
+		print_other_headings(heading_level, title, description)
 
 		do_ideas(depth, cuts, node)
 
+evita_security_risk_table=[
+	[0,0,0,0,0],
+	[0,0,1,2,3],
+	[0,1,2,3,4],
+	[1,2,3,4,5],
+	[2,3,4,5,6]
+]
+def get_evita_security_risk_level(non_safety_severity, combined_attack_probability):
+	global evita_security_risk_table
+
+	if non_safety_severity < 0 or non_safety_severity > 4:
+		raise ValueError('encountered an invalid non-safety severity', non_safety_severity)
+	return evita_security_risk_table[non_safety_severity][combined_attack_probability-1]
+
+def do_evita(evita_tags):
+	if len(evita_tags) < 1:
+		return
+
+	print("\n\n# EVITA Chart\n The following is the EVITA chart for the above tree.\n")
+	print("Node | **FS** | **OS** | **PS** | **SS** | **ET** | **E** | **K** | **WO** | **EQ** | **APT** | **AP** | **CO** | **FR** | **OR** | **PR** | **SR**")
+	print("----|---|---|---|---|----|---|---|----|----|-----|----|----|---|---|---|---")
+
+	for evita_tag in evita_tags:
+		evita_tag['APT'] = evita_tag['ET'] + evita_tag['E'] + evita_tag['K'] + evita_tag['WO'] + evita_tag['EQ']
+		if evita_tag['APT'] < 0:
+			raise ValueError('encountered negative Attack Potential Total (APT)', evita_tag)
+		elif evita_tag['APT'] < 10:
+			evita_tag['AP'] = 5
+		elif evita_tag['APT'] < 14:
+			evita_tag['AP'] = 4
+		elif evita_tag['APT'] < 20:
+			evita_tag['AP'] = 3
+		elif evita_tag['APT'] < 25:
+			evita_tag['AP'] = 2
+		else:
+			evita_tag['AP'] = 1
+		#TODO support non-zero controllability
+		evita_tag['CO'] = 0
+
+		evita_tag['FR'] = get_evita_security_risk_level(evita_tag['FS'], evita_tag['AP'])
+		evita_tag['OR'] = get_evita_security_risk_level(evita_tag['OS'], evita_tag['AP'])
+		evita_tag['PR'] = get_evita_security_risk_level(evita_tag['PS'], evita_tag['AP'])
+		evita_tag['SR'] = get_evita_security_risk_level(evita_tag['SS'], evita_tag['AP'])
+
+		print("%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s" % (
+			evita_tag['Node'],
+			evita_tag['FS'],
+			evita_tag['OS'],
+			evita_tag['PS'],
+			evita_tag['SS'],
+			evita_tag['ET'],
+			evita_tag['E'],
+			evita_tag['K'],
+			evita_tag['WO'],
+			evita_tag['EQ'],
+			evita_tag['APT'],
+			evita_tag['AP'],
+			evita_tag['CO'],
+			evita_tag['FR'],
+			evita_tag['OR'],
+			evita_tag['PR'],
+			evita_tag['SR'],
+		))
+
+	print("\n**FS** = Financial Severity **OS** = Operational Severity **PS** = Privacy Severity **SS** = Safety Severity **ET** = Elapsed Time **E** = Expertise **K** = Knowledge **WO** = Window of Opportuntiy **EQ** = Equiptment Required **APT** = Attack Potential Total **AP** = Attack Probability **CO** = Controlability (Safety) **FR** = Financial Risk **OR** = Operational Risk **PR** = PrivacyRisk **SR** = Safety Risk ")
 
 cuts = sys.argv[1:]
 data = json.load(sys.stdin)
@@ -173,4 +251,8 @@ if 'id' in data and data['id'] == 'root':
 else:
 	tops.append(data)
 
+evita_tags = []
+
 do_tops()
+
+do_evita(evita_tags)
