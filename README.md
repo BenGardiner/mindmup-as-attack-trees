@@ -35,9 +35,9 @@ In detail:
 
 	e.g. ```./scripts/add-numbered-ids.py < examples/steps/1_Compromise\ \(P\)RNG\ Somehow.mup | ./scripts/normalize-json > examples/steps/2_Compromise\ \(P\)RNG\ Somehow.mup```
 
-1. generate a template report for the now-numbered tree using ```scripts/generate-descriptions-template.md [cut levels ...]```. This will create a markdown template and some subtrees snapshot ```.mup``` files. The template includes inline ```.png``` images that need to be rendered from those ```.mup``` files.
+1. generate a template report for the now-numbered tree using ```scripts/generate-descriptions-md-template [cut levels ...]```. This will create a markdown template and some subtrees snapshot ```.mup``` files. The template includes inline ```.png``` images that need to be rendered from those ```.mup``` files.
 
-	e.g. ```mkdir examples/steps/3_Report && cd examples/steps/3_Report && ../../../scripts/generate-descriptions-template.md 2.0 2.1 < ../2_Compromise\ \(P\)RNG\ Somehow.mup > Report.md```
+	e.g. ```mkdir examples/steps/3_Report && cd examples/steps/3_Report && ../../../scripts/generate-descriptions-md-template 2.0 2.1 < ../2_Compromise\ \(P\)RNG\ Somehow.mup > Report.md```
 
 1. for each of the subtree snapshot ```.mup``` files: render a .png file at [mindmup](https://app.mindmup.com/map/new/) and save them (e.g. ```A.mup``` to ```A.png```).
 

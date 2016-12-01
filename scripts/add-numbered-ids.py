@@ -38,14 +38,14 @@ def add_label(depth, node):
 
 depth=0
 
-if len(sys.argv) < 1:
+if len(sys.argv) < 2:
 	fd_in=sys.stdin
 else:
 	fd_in=open(sys.argv[1], 'r')
 
 data = json.load(fd_in)
 
-if len(sys.argv) < 1:
+if len(sys.argv) < 2:
 	fd_out = sys.stdout
 else:
 	fd_in.close()
