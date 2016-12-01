@@ -2,6 +2,7 @@
 
 import sys,json
 from collections import OrderedDict
+import re
 
 
 if len(sys.argv) < 2:
@@ -17,7 +18,11 @@ else:
 	fd_in.close()
 	fd_out=open(sys.argv[1],'w')
 
-fd_out.write(json.dumps(data, indent=2, sort_keys=True))
+str = json.dumps(data, indent=2, sort_keys=True)
+str = re.sub(r'\s+$', '', str, 0, re.M)
+str = re.sub(r'\s+$', '', str, flags=re.M)
+
+fd_out.write(str)
 
 if len(sys.argv) >= 1:
 	fd_out.close()
