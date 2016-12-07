@@ -9,6 +9,18 @@ const yargs = require('yargs');
 const argv = yargs
     .usage(`rendermup input.mup`)
     .demand(1)
+    .option("w", {
+        alias: "width",
+        type: "number",
+        describe: "The output file width, in pixels",
+        default: "1260"
+    })
+    .option("h", {
+        alias: "height",
+        type: "number",
+        describe: "The output file height, in pixels",
+        default: "500"
+    })
     .help(false)
     .argv;
 
@@ -50,8 +62,8 @@ var d3n = new D3Node(options);
 ///-- start D3 code
 //TODO: stop abusing margin.left to compensate for test rendering of top node getting cut off
 var margin = {top: 40, right: 40, bottom: 40, left: 160},
-  total_width = 1260;
-  total_height = 500;
+  total_width = argv.width;
+  total_height = argv.height;
   width = total_width - margin.left - margin.right,
   height = total_height - margin.top - margin.bottom;
 
