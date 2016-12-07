@@ -1,6 +1,20 @@
+#!/usr/bin/env node
+
 const fs = require('fs');
 const D3Node = require('d3-node');
 const d3 = require('d3');
+const path = require("path");
+const yargs = require('yargs');
+
+const argv = yargs
+    .usage(`rendermup input.mup`)
+    .demand(1)
+    .help(false)
+    .argv;
+
+const input = fs.readFileSync(argv._[0], 'utf8');
+const outputHtmlFilename = path.basename(argv._[0], ".mup") + ".html";
+const outputPngFilename = path.basename(argv._[0], ".mup") + ".png";
 
 const styles = `
 
@@ -87,7 +101,7 @@ do_draw = function(json) {
 
 };
 
-mindmup_json = JSON.parse(fs.readFileSync('test.mup', 'utf8'));
+mindmup_json = JSON.parse(input);
 
 if (typeof mindmup_json.id !== "undefined" && mindmup_json['id'] === "root") { // handle >= 2 mindmup_json
   mindmup_json = mindmup_json['ideas']['1'];
@@ -103,17 +117,15 @@ function elbow(d, i) {
 /// -- end D3 code
 
 // create output files
-outputName = 'v4.line-chart';
-
 const svg2png = require('svg2png');
 
-fs.writeFile(outputName+'.html', d3n.html(), function () {
-  console.log('>> Done. Open '+outputName+'.html" in a web browser');
+fs.writeFile(outputHtmlFilename, d3n.html(), function () {
+  console.log('>> Done. Open '+outputHtmlFilename+'" in a web browser');
 });
 
 var svgBuffer = new Buffer(d3n.svgString(), 'utf-8');
 svg2png(svgBuffer, {width: width*4})
-  .then(buffer => fs.writeFile(outputName+'.png', buffer))
+  .then(buffer => fs.writeFile(outputPngFilename, buffer))
   .catch(e => console.error('ERR:', e))
-  .then(err => console.log('>> Exported: "'+outputName+'.png"'));
+  .then(err => console.log('>> Exported: "'+outputPngFilename+'"'));
 
