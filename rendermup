@@ -21,6 +21,12 @@ const argv = yargs
         describe: "The output file height, in pixels",
         default: "1600"
     })
+    .option("r", {
+        alias: "right-justified",
+        type: "boolean",
+        describe: "render the tree with all leaves at the right (i.e. cluster/dendrogram layout)",
+        default: "false"
+    })
     .help(false)
     .argv;
 
@@ -81,7 +87,11 @@ do_draw = function(json) {
     return Object.keys(d.ideas).map(key => d.ideas[key]);
   });
 
-  var tree = d3.tree().size([height, width-160]);
+  var tree = d3.tree();
+  if (argv.r) {
+    tree = d3.cluster();
+  }
+  var tree = tree.size([height, width-160]);
 
   var link = g.selectAll(".link")
     .data(tree(root_node).descendants().slice(1))
