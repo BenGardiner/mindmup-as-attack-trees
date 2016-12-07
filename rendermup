@@ -65,7 +65,7 @@ var g = d3n.createSVG()
 do_draw = function(json) {
   var root_node = d3.hierarchy(json, function(d) {
     if (typeof d.ideas === "undefined"){ return null; }
-    //TODO: return null for collapsed nodes as well.
+    if (typeof d.attr !== "undefined" && typeof d.attr.collapsed !== "undefined" && d.attr.collapsed === true) { return null; }
     return Object.keys(d.ideas).map(key => d.ideas[key]);
   });
 
