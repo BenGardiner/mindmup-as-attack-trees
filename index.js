@@ -1,67 +1,110 @@
+const fs = require('fs');
 const D3Node = require('d3-node');
 const d3 = require('d3');
 
-const styles = '.axis path,.axis line {fill: none;stroke: #000;shape-rendering: crispEdges;}.area {fill: lightsteelblue;}.line {fill: none;stroke: steelblue;stroke-width: 1.5px;} .dot {fill: white;stroke: steelblue;stroke-width: 1.5px;}';
-const markup = '<div id="container"><h2>Line Chart (missing data)</h2><div id="chart"></div></div>';
+const styles = `
+
+.node circle {
+  fill: #999;
+}
+
+.node text {
+  font: 10px sans-serif;
+}
+
+.node--internal circle {
+  fill: #555;
+}
+
+.node--internal text {
+  text-shadow: 0 1px 0 #fff, 0 -1px 0 #fff, 1px 0 0 #fff, -1px 0 0 #fff;
+}
+
+.link {
+  fill: none;
+  stroke: #555;
+  stroke-opacity: 0.4;
+  stroke-width: 1.5px;
+}
+
+`;
+const markup = '<div id="container"><div id="chart"></div></div>';
 var options = {selector:'#chart', svgStyles:styles, container:markup, d3Module:d3};
 
 var d3n = new D3Node(options);
 
-// adapted from: http://bl.ocks.org/mbostock/0533f44f2cfabecc5e3a
 ///-- start D3 code
-var data = d3.range(40).map(function(i) {
-  return i % 5 ? {x: i / 39, y: (Math.sin(i / 3) + 2) / 4} : null;
-});
+//TODO: stop abusing margin.left to compensate for test rendering of top node getting cut off
+var margin = {top: 40, right: 40, bottom: 40, left: 160},
+  total_width = 1260;
+  total_height = 500;
+  width = total_width - margin.left - margin.right,
+  height = total_height - margin.top - margin.bottom;
 
-var margin = {top: 40, right: 40, bottom: 40, left: 40},
-  width = 960 - margin.left - margin.right,
-  height = 500 - margin.top - margin.bottom;
-
-var x = d3.scaleLinear()
-  .range([0, width]);
-
-var y = d3.scaleLinear()
-  .range([height, 0]);
-
-var line = d3.line()
-  .defined(function(d) { return d; })
-  .x(function(d) { return x(d.x); })
-  .y(function(d) { return y(d.y); });
-
-var svg = d3n.createSVG()
-  .datum(data)
+var g = d3n.createSVG()
   .attr("width", width + margin.left + margin.right)
   .attr("height", height + margin.top + margin.bottom)
+  .attr("viewBox", "0 0 " + total_width + " " + total_height)
   .append("g")
   .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-svg.append("g")
-  .attr("class", "axis axis--x")
-  .attr("transform", "translate(0," + height + ")")
-  .call(d3.axisBottom().scale(x));
+do_draw = function(json) {
+  var root_node = d3.hierarchy(json, function(d) {
+    if (typeof d.ideas === "undefined"){ return null; }
+    //TODO: return null for collapsed nodes as well.
+    return Object.keys(d.ideas).map(key => d.ideas[key]);
+  });
 
-svg.append("g")
-  .attr("class", "axis axis--y")
-  .call(d3.axisLeft().scale(y));
+  var tree = d3.tree().size([height, width-160]);
 
-svg.append("path")
-  .attr("class", "line")
-  .attr("d", line);
+  var link = g.selectAll(".link")
+    .data(tree(root_node).descendants().slice(1))
+    .enter().append("path")
+      .attr("class", "link")
+      .attr("d", function(d) {
+        return "M" + d.y + "," + d.x
+            + "C" + (d.y + d.parent.y) / 2 + "," + d.x
+            + " " + (d.y + d.parent.y) / 2 + "," + d.parent.x
+            + " " + d.parent.y + "," + d.parent.x;
+      });
 
-svg.selectAll(".dot")
-  .data(data.filter(function(d) { return d; }))
-  .enter().append("circle")
-  .attr("class", "dot")
-  .attr("cx", line.x())
-  .attr("cy", line.y())
-  .attr("r", 3.5);
+  var node = g.selectAll(".node")
+    .data(root_node.descendants())
+    .enter().append("g")
+      .attr("class", function(d) { return "node" + (d.children ? " node--internal" : " node--leaf"); })
+      .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
+
+  node.append("circle")
+      .attr("r", 2.5);
+
+  node.append("text")
+      .attr("dy", 3)
+      .attr("x", function(d) { return d.children ? -8 : 8; })
+      .style("text-anchor", function(d) { return d.children ? "end" : "start"; })
+      .text(function(d) {
+        return d.data.title;
+      });
+
+};
+
+mindmup_json = JSON.parse(fs.readFileSync('test.mup', 'utf8'));
+
+if (typeof mindmup_json.id !== "undefined" && mindmup_json['id'] === "root") { // handle >= 2 mindmup_json
+  mindmup_json = mindmup_json['ideas']['1'];
+}
+
+do_draw(mindmup_json);
+
+function elbow(d, i) {
+  return "M" + d.source.y + "," + d.source.x
+      + "V" + d.target.x + "H" + d.target.y;
+}
 
 /// -- end D3 code
 
 // create output files
 outputName = 'v4.line-chart';
 
-const fs = require('fs');
 const svg2png = require('svg2png');
 
 fs.writeFile(outputName+'.html', d3n.html(), function () {
@@ -69,7 +112,8 @@ fs.writeFile(outputName+'.html', d3n.html(), function () {
 });
 
 var svgBuffer = new Buffer(d3n.svgString(), 'utf-8');
-svg2png(svgBuffer)
+svg2png(svgBuffer, {width: width*4})
   .then(buffer => fs.writeFile(outputName+'.png', buffer))
   .catch(e => console.error('ERR:', e))
   .then(err => console.log('>> Exported: "'+outputName+'.png"'));
+
