@@ -19,7 +19,7 @@ const argv = yargs
         alias: "height",
         type: "number",
         describe: "The output file height, in pixels",
-        default: "1600"
+        default: "1550"
     })
     .option("r", {
         alias: "right-justified",
