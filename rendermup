@@ -67,6 +67,7 @@ var d3n = new D3Node(options);
 
 ///-- start D3 code
 //TODO: stop abusing margin.left to compensate for test rendering of top node getting cut off
+//TODO: prevent text labels from getting cut-off on the right
 var margin = {top: 40, right: 40, bottom: 40, left: 160},
   total_width = argv.width;
   total_height = argv.height;
@@ -105,6 +106,7 @@ do_draw = function(json) {
             + " " + d.parent.y + "," + d.parent.x;
       });
 
+  //TODO: offset the internal node text by +one-line vertically, or do 'separation function' magic to keep the labels from overlapping
   var node = g.selectAll(".node")
     .data(root_node.descendants())
     .enter().append("g")
