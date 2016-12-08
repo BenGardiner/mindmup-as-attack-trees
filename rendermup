@@ -109,7 +109,7 @@ do_draw = function(json) {
             + "H" + elbow_point + "V" + d.x + "H" + d.y;
       });
 
-  //TODO: offset the internal node text by +one-line vertically, or do 'separation function' magic to keep the labels from overlapping
+  //TODO: do 'separation function' magic to keep the labels from overlapping
   var node = g.selectAll(".node")
     .data(root_node.descendants())
     .enter().append("g")
@@ -122,7 +122,8 @@ do_draw = function(json) {
   node.append("text")
       .attr("dy", 3)
       .attr("x", function(d) { return d.children ? -8 : 8; })
-      .style("text-anchor", function(d) { return d.children ? "end" : "start"; })
+      .style("text-anchor", function(d) { return d.children ? "middle" : "start"; })
+      .style("alignment-baseline", function(d) { return d.children ? "hanging" : "baseline"; })
       .text(function(d) {
         return d.data.title;
       });
