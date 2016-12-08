@@ -84,7 +84,8 @@ do_draw = function(json) {
   var root_node = d3.hierarchy(json, function(d) {
     if (typeof d.ideas === "undefined"){ return null; }
     if (typeof d.attr !== "undefined" && typeof d.attr.collapsed !== "undefined" && d.attr.collapsed === true) { return null; }
-    return Object.keys(d.ideas).map(key => d.ideas[key]);
+    //sort(...) orders the ideas the same as the children are ordered in mindmup
+    return Object.keys(d.ideas).sort(function(a,b) { return a - b; }).map(key => d.ideas[key]);
   });
 
   var tree = d3.tree();
