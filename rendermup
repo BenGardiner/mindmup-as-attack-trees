@@ -100,10 +100,13 @@ do_draw = function(json) {
     .enter().append("path")
       .attr("class", "link")
       .attr("d", function(d) {
-        return "M" + d.y + "," + d.x
-            + "C" + (d.y + d.parent.y) / 2 + "," + d.x
-            + " " + (d.y + d.parent.y) / 2 + "," + d.parent.x
-            + " " + d.parent.y + "," + d.parent.x;
+        elbow_point = (d.parent.y + 3*(d.y - d.parent.y) / 4)
+        if (argv.r) {
+          elbow_point = d.y - 25;
+        }
+
+        return "M" + d.parent.y + "," + d.parent.x
+            + "H" + elbow_point + "V" + d.x + "H" + d.y;
       });
 
   //TODO: offset the internal node text by +one-line vertically, or do 'separation function' magic to keep the labels from overlapping
@@ -133,11 +136,6 @@ if (typeof mindmup_json.id !== "undefined" && mindmup_json['id'] === "root") { /
 }
 
 do_draw(mindmup_json);
-
-function elbow(d, i) {
-  return "M" + d.source.y + "," + d.source.x
-      + "V" + d.target.x + "H" + d.target.y;
-}
 
 /// -- end D3 code
 
