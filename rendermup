@@ -104,11 +104,12 @@ do_draw = function(json) {
         elbow_point = (d.parent.y + 9*(d.y - d.parent.y) / 10)
         if (argv.r) {
           elbow_point = d.parent.y;
+          if (d.parent.parent === null) {
+            elbow_point = (d.parent.y + (d.y - d.parent.y) / 2)
+          }
         }
 
-        if (d.parent !== null) {
-          text_wrap_width = Math.min(text_wrap_width, d.y - d.parent.y);
-        }
+        text_wrap_width = Math.min(text_wrap_width, d.y - d.parent.y);
 
         return "M" + d.parent.y + "," + d.parent.x
             + "H" + elbow_point + "V" + d.x + "H" + d.y;
