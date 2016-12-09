@@ -204,6 +204,9 @@ do_draw = function(json) {
           if (d.data.title === "AND") {
             return "middle";
           }
+          if (d.parent === null) {
+            return "middle";
+          }
           return d.children ? "hanging" : "baseline";
       })
       .text(function(d) { return d.data.title; })
