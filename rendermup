@@ -67,9 +67,8 @@ var options = {selector:'#chart', svgStyles:styles, container:markup, d3Module:d
 var d3n = new D3Node(options);
 
 ///-- start D3 code
-//TODO: stop abusing margin.left to compensate for test rendering of top node getting cut off
 //TODO: prevent text labels from getting cut-off on the right
-var margin = {top: 40, right: 40, bottom: 40, left: 160},
+var margin = {top: 40, right: 40, bottom: 40, left: 40},
   total_width = argv.width;
   total_height = argv.height;
   width = total_width - margin.left - margin.right,
