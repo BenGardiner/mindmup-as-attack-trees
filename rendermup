@@ -95,21 +95,91 @@ do_draw = function(json) {
   }
   var tree = tree.size([height, width-160]);
 
+  text_wrap_width = Number.MAX_SAFE_INTEGER;
   var link = g.selectAll(".link")
     .data(tree(root_node).descendants().slice(1))
     .enter().append("path")
       .attr("class", "link")
       .attr("d", function(d) {
-        elbow_point = (d.parent.y + 3*(d.y - d.parent.y) / 4)
+        elbow_point = (d.parent.y + 9*(d.y - d.parent.y) / 10)
         if (argv.r) {
-          elbow_point = d.y - 25;
+          elbow_point = d.parent.y;
+        }
+
+        if (d.parent !== null) {
+          text_wrap_width = Math.min(text_wrap_width, d.y - d.parent.y);
         }
 
         return "M" + d.parent.y + "," + d.parent.x
             + "H" + elbow_point + "V" + d.x + "H" + d.y;
       });
 
-  //TODO: do 'separation function' magic to keep the labels from overlapping
+  text_wrap_width = 0.9 * text_wrap_width;
+
+  //Wow, this is embarassing. Please look away!
+  // 'works' only for 10pt sans-serif, here, when stars are properly aligned
+  var approxTextWidth = (function() {
+      function charW(w, c) {
+          if (c == 'W' || c == 'M') w += 15;
+          else if (c == 'w' || c == 'm') w += 12;
+          else if (c == 'I' || c == 'i' || c == 'l' || c == 't' || c == 'f') w += 4;
+          else if (c == 'r') w += 8;
+          else if (c == c.toUpperCase()) w += 12;
+          else w += 10;
+          return w;
+      }
+
+      return function(s) {
+          return s.split('').reduce(charW, 0) / 2;
+      };
+  })();
+
+  function d3TextWrap(text, width) {
+      var arrLineCreatedCount = [];
+      text.each(function() {
+          var text = d3.select(this),
+              words = text.text().split(/[ \f\n\r\t\v]+/).reverse(), //Don't cut non-breaking space (\xA0), as well as the Unicode characters \u00A0 \u2028 \u2029)
+              word,
+              line = [],
+              lineNumber = 0,
+              lineHeight = 1.1, //Ems
+              x = text.attr("x"),
+              y = text.attr("y"),
+              createdLineCount = 1; //Total line created count
+          var textAlign = text.style('text-anchor') || 'left';
+          var alignmentBase = text.style('alignment-baseline') || 'baseline';
+          var adjusted_width = text.datum().children ? width : width / 2; //leaf nodes only get 1/2 the horizontal space over on the right
+
+          dy = 0;
+          x = 0;
+          if (textAlign === 'start') {
+            x = 8;
+          }
+          y = 3;
+          if (alignmentBase === 'hanging') {
+            y = 12;
+          }
+
+          var tspan = text.text(null).append("tspan").attr("x", x).attr("y", y).attr("dy", dy + "em");
+          //noinspection JSHint
+          while (word = words.pop()) {
+              line.push(word);
+              tspan.text(line.join(" "));
+              if (approxTextWidth(line.join(" ")) > adjusted_width && line.length > 1) {
+                  line.pop();
+                  tspan.text(line.join(" "));
+                  line = [word];
+                  tspan = text.append("tspan").attr("x", x).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em").text(word);
+                  ++createdLineCount;
+              }
+          }
+
+          arrLineCreatedCount.push(createdLineCount); //Store the line count in the array
+      });
+      return arrLineCreatedCount;
+  }
+
+  //TODO: add vertical offset or do 'separation function' magic to keep the labels from overlapping
   var node = g.selectAll(".node")
     .data(root_node.descendants())
     .enter().append("g")
@@ -122,12 +192,20 @@ do_draw = function(json) {
   node.append("text")
       .attr("dy", 3)
       .attr("x", function(d) { return d.children ? -8 : 8; })
-      .style("text-anchor", function(d) { return d.children ? "middle" : "start"; })
-      .style("alignment-baseline", function(d) { return d.children ? "hanging" : "baseline"; })
-      .text(function(d) {
-        return d.data.title;
-      });
-
+      .style("text-anchor", function(d) {
+          if (d.parent === null) {
+            return "start";
+          }
+          return d.children ? "middle" : "start";
+      })
+      .style("alignment-baseline", function(d) {
+          if (d.data.title === "AND") {
+            return "middle";
+          }
+          return d.children ? "hanging" : "baseline";
+      })
+      .text(function(d) { return d.data.title; })
+      .call(d3TextWrap, text_wrap_width, 0, 0);
 };
 
 mindmup_json = JSON.parse(input);
