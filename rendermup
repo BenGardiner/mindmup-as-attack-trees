@@ -190,6 +190,7 @@ do_draw = function(json) {
   node.append("circle")
       .attr("r", 2.5);
 
+  //TODO put the left edge of the leaf node text at - 1/2 distance H distance between other levels to better use space for text.
   node.append("text")
       .attr("dy", 3)
       .attr("x", function(d) { return d.children ? -8 : 8; })
