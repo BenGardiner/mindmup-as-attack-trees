@@ -45,7 +45,8 @@ const styles = `
 }
 
 .node--internal circle {
-  fill: #555;
+  stroke: #333;
+  fill: #FFF;
 }
 
 .node--internal text {
@@ -54,8 +55,8 @@ const styles = `
 
 .link {
   fill: none;
-  stroke: #555;
-  stroke-opacity: 0.4;
+  stroke: #c7c7c7;
+  stroke-opacity: 1.0;
   stroke-width: 1.5px;
 }
 
