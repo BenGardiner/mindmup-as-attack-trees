@@ -105,9 +105,11 @@ do_draw = function(json) {
       .attr("class", "link")
       .attr("d", function(d) {
         elbow_point = (d.parent.y + 9*(d.y - d.parent.y) / 10)
+
         if (argv.r) {
           elbow_point = d.parent.y;
           if (d.parent.parent === null) {
+            //TODO: set this to the minimum of all the elbow points of the siblings of d
             elbow_point = (d.parent.y + (d.y - d.parent.y) / 2)
           }
         }
@@ -173,7 +175,7 @@ do_draw = function(json) {
                   line.pop();
                   tspan.text(line.join(" "));
                   line = [word];
-                  tspan = text.append("tspan").attr("x", x).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em").text(word);
+                  tspan = text.append("tspan").attr("x", x).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em").text(word); //TODO: don't use dy -- it is making glitches in jsdom; instead increment by 1.1* font size in px (assume 10 for now)
                   ++createdLineCount;
               }
           }
@@ -232,6 +234,9 @@ const svg2png = require('svg2png');
 fs.writeFile(outputHtmlFilename, d3n.html(), function () {
   console.log('>> Done. Open '+outputHtmlFilename+'" in a web browser');
 });
+
+//FIXME: there is double-rendering of intermediate node labels in the png
+//return;
 
 var svgBuffer = new Buffer(d3n.svgString(), 'utf-8');
 svg2png(svgBuffer, {width: width*4})
