@@ -89,11 +89,14 @@ do_draw = function(json) {
     return Object.keys(d.ideas).sort(function(a,b) { return a - b; }).map(key => d.ideas[key]);
   });
 
-  var tree = d3.tree();
+  var tree_maker;
   if (argv.r) {
-    tree = d3.cluster();
+    tree_maker = d3.cluster();
   }
-  var tree = tree.size([height, width-160]);
+  else {
+    tree_maker = d3.tree();
+  }
+  var tree = tree_maker.size([height, width-160]);
 
   text_wrap_width = Number.MAX_SAFE_INTEGER;
   var link = g.selectAll(".link")
