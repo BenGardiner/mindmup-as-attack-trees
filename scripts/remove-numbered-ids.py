@@ -20,7 +20,7 @@ def trim_label(node):
 	if not node.get('title', '').find('(*)') == -1:
 		return
 
-	node.update({'title': re.sub(r'^\d\..*?\s','',node.get('title', ''))})
+	node.update({'title': re.sub(r'^\d+\..*?\s', '', node.get('title', ''))})
 	return
 
 if len(sys.argv) < 1:
@@ -36,8 +36,18 @@ else:
 	fd_in.close()
 	fd_out=open(sys.argv[1],'w')
 
-do_ideas(data)
-fd_out.write(json.dumps(data, indent=2, sort_keys=True))
+
+if 'id' in data and data['id'] == 'root':
+	#version 2 mindmup
+	do_ideas(data['ideas']['1'])
+else:
+	do_ideas(data)
+
+str = json.dumps(data, indent=2, sort_keys=True)
+str = re.sub(r'\s+$', '', str, 0, re.M)
+str = re.sub(r'\s+$', '', str, flags=re.M)
+
+fd_out.write(str)
 
 if len(sys.argv) >= 1:
 	fd_out.close()

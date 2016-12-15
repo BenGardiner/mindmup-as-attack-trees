@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys,json
+import re
 
 levels_count = dict()
 
@@ -57,7 +58,11 @@ if 'id' in data and data['id'] == 'root':
 else:
 	do_ideas(depth, data)
 
-fd_out.write(json.dumps(data, indent=2, sort_keys=True))
+str = json.dumps(data, indent=2, sort_keys=True)
+str = re.sub(r'\s+$', '', str, 0, re.M)
+str = re.sub(r'\s+$', '', str, flags=re.M)
+
+fd_out.write(str)
 
 if len(sys.argv) >= 1:
 	fd_out.close()
