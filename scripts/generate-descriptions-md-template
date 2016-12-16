@@ -176,6 +176,7 @@ def get_description(node):
 	if description is '':
 		description = node.get('attr', dict()).get('attachment', dict()).get('content', '')
 
+	#TODO: convert special characters e.g. %lt => <
 	if detect_html(description):
 		description = text_maker.handle(description)
 
@@ -267,8 +268,10 @@ def do_evita(evita_tags):
 
 	print("\n**FS** = Financial Severity **OS** = Operational Severity **PS** = Privacy Severity **SS** = Safety Severity **ET** = Elapsed Time **E** = Expertise **K** = Knowledge **WO** = Window of Opportuntiy **EQ** = Equiptment Required **APT** = Attack Potential Total **AP** = Attack Probability **CO** = Controlability (Safety) **FR** = Financial Risk **OR** = Operational Risk **PR** = PrivacyRisk **SR** = Safety Risk ")
 
-cuts = sys.argv[1:]
-data = json.load(sys.stdin)
+fd_in = open(sys.argv[1], 'r')
+cuts = sys.argv[2:]
+data = json.load(fd_in)
+fd_in.close()
 
 resources = None
 if 'resources' in data:
