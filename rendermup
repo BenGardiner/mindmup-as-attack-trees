@@ -19,7 +19,7 @@ const argv = yargs
         alias: "height",
         type: "number",
         describe: "The output file height, in pixels",
-        default: "1550"
+        default: "-1"
     })
     .option("r", {
         alias: "right-justified",
@@ -56,31 +56,17 @@ const styles = `
 .link {
   fill: none;
   stroke: #c7c7c7;
-  stroke-opacity: 1.0;
+  stroke-opacity: 0.33;
   stroke-width: 1.5px;
 }
 
 `;
-const markup = '<div id="container"><div id="chart"></div></div>';
+const markup = '<meta http-equiv="refresh" content="3" ><div id="container"><div id="chart"></div></div>';
 var options = {selector:'#chart', svgStyles:styles, container:markup, d3Module:d3};
 
 var d3n = new D3Node(options);
 
 ///-- start D3 code
-//TODO: prevent text labels from getting cut-off on the right
-var margin = {top: 40, right: 40, bottom: 40, left: 40},
-  total_width = argv.width;
-  total_height = argv.height;
-  width = total_width - margin.left - margin.right,
-  height = total_height - margin.top - margin.bottom;
-
-var g = d3n.createSVG()
-  .attr("width", width + margin.left + margin.right)
-  .attr("height", height + margin.top + margin.bottom)
-  .attr("viewBox", "0 0 " + total_width + " " + total_height)
-  .append("g")
-  .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
 do_draw = function(json) {
   var root_node = d3.hierarchy(json, function(d) {
     if (typeof d.ideas === "undefined"){ return null; }
@@ -88,42 +74,6 @@ do_draw = function(json) {
     //sort(...) orders the ideas the same as the children are ordered in mindmup
     return Object.keys(d.ideas).sort(function(a,b) { return a - b; }).map(key => d.ideas[key]);
   });
-
-  var tree_maker;
-  if (argv.r) {
-    tree_maker = d3.cluster();
-  }
-  else {
-    tree_maker = d3.tree();
-  }
-  var tree = tree_maker.size([height, width-160]);
-
-  text_wrap_width = Number.MAX_SAFE_INTEGER;
-  var link = g.selectAll(".link")
-    .data(tree(root_node).descendants().slice(1))
-    .enter().append("path")
-      .attr("class", "link")
-      .attr("d", function(d) {
-        elbow_point = (d.parent.y + 9*(d.y - d.parent.y) / 10)
-
-        if (argv.r) {
-          elbow_point = d.parent.y;
-          if (d.parent.parent === null) {
-            var min_y = d.y;
-            d.parent.children.forEach(function(entry){
-              min_y = Math.min(min_y, entry.y);
-            })
-            elbow_point = (d.parent.y + (min_y - d.parent.y) / 2)
-          }
-        }
-
-        text_wrap_width = Math.min(text_wrap_width, d.y - d.parent.y);
-
-        return "M" + d.parent.y + "," + d.parent.x
-            + "H" + elbow_point + "V" + d.x + "H" + d.y;
-      });
-
-  text_wrap_width = 0.9 * text_wrap_width;
 
   //Wow, this is embarassing. Please look away!
   // 'works' only for 10pt sans-serif, here, when stars are properly aligned
@@ -143,6 +93,132 @@ do_draw = function(json) {
       };
   })();
 
+  var margin = {top: 40, right: 40, bottom: 40, left: 40};
+
+  var node_width_size;
+  var node_height_size;
+  if (argv.width !== -1 && argv.height == -1) {
+    max_depth = 0;
+    root_node.each(function(d){
+      max_depth = Math.max(max_depth, d.depth);
+    });
+    available_text_width = (argv.width - margin.left - margin.right) / (max_depth+1);
+    node_width_size = available_text_width;
+
+    max_text_height = 0;
+    root_node.each(function(d){
+      if (argv.r && typeof d.children !== 'undefined') return;
+
+      approx_height = Math.ceil(approxTextWidth(d.data.title) / available_text_width) * 10 * 1.1;
+      max_text_height = Math.max(max_text_height, approx_height);
+    });
+    node_height_size = max_text_height;
+
+    if (argv.r) {
+      node_height_size = node_height_size * 1.1;
+    }
+  }
+
+  var svg = d3n.createSVG();
+
+  var width;
+  if (argv.width != -1) {
+    total_width = argv.width;
+    width = total_width - margin.left - margin.right;
+  } else {
+    //FIXME: dunno, don't do that...
+  }
+
+  var height;
+  if (argv.height != -1) {
+    total_height = argv.height;
+    height = total_height - margin.top - margin.bottom;
+  } else {
+    nodes_at_level = {};
+    leaf_count = 0;
+
+    root_node.each(function(d){
+      nodes_at_level[d.depth] = typeof nodes_at_level[d.depth] === 'undefined' ? 1 : nodes_at_level[d.depth] + 1;
+
+      if (typeof d.children === 'undefined') {
+        leaf_count = leaf_count + 1;
+      }
+    });
+
+    if (argv.r) {
+      height = (leaf_count + 1) * node_height_size * 1.5;
+    } else {
+      height = (1 + Math.max.apply(Math, Object.keys(nodes_at_level).map(function(key){ return nodes_at_level[key]; }))) * node_height_size;
+    }
+  }
+
+  var g = svg
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .attr("viewBox", "0 0 " + width + " " + height)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  var tree_maker;
+  if (argv.r) {
+    tree_maker = d3.cluster();
+  }
+  else {
+    tree_maker = d3.tree();
+  }
+
+  var tree;
+  if (argv.width != -1 && argv.height != -1) {
+    tree = tree_maker.size([height, width-160]);
+  } else {
+    tree = tree_maker.nodeSize([node_height_size, node_width_size]); //TODO why's all my stuff rotated 90deg?
+  }
+
+  var tree_data = tree(root_node).descendants().slice(1);
+
+  if (argv.width == -1 || argv.height == -1) {
+    root_node.each(function(d){
+      d.x = d.x + height / 2;
+    })
+  }
+
+  var text_wrap_width = Number.MAX_SAFE_INTEGER;
+  root_node.each(function(d){
+    if (d.parent === null) return;
+
+    text_wrap_width = Math.min(text_wrap_width, d.y - d.parent.y);
+  });
+
+  // In a dendrogram, give the lead nodes more room
+  root_node.each(function(d){
+    if (argv.r && typeof d.children === 'undefined') {
+      d.y = d.y - text_wrap_width / 2;
+    }
+  });
+
+  var link = g.selectAll(".link")
+    .data(tree_data)
+    .enter().append("path")
+      .attr("class", "link")
+      .attr("d", function(d) {
+        elbow_point = (d.parent.y + 9*(d.y - d.parent.y) / 10)
+
+        if (argv.r) {
+          elbow_point = d.parent.y;
+          if (d.parent.parent === null) {
+            var min_y = d.y;
+            d.parent.children.forEach(function(entry){
+              min_y = Math.min(min_y, entry.y);
+            })
+            elbow_point = (d.parent.y + (min_y - d.parent.y) / 2)
+          }
+        }
+
+        return "M" + d.parent.y + "," + d.parent.x
+            + "H" + elbow_point + "V" + d.x + "H" + d.y;
+      });
+  text_wrap_width = 0.9 * text_wrap_width;
+
   function d3TextWrap(text, width) {
       var arrLineCreatedCount = [];
       text.each(function() {
@@ -151,13 +227,13 @@ do_draw = function(json) {
               word,
               line = [],
               lineNumber = 0,
-              lineHeight = 1.1, //Ems
+              lineHeight = 1.05, //Ems
               x = text.attr("x"),
               y = text.attr("y"),
               createdLineCount = 1; //Total line created count
           var textAlign = text.style('text-anchor') || 'left';
           var alignmentBase = text.style('alignment-baseline') || 'baseline';
-          var adjusted_width = text.datum().children ? width : width / 2; //leaf nodes only get 1/2 the horizontal space over on the right
+          var adjusted_width = width;
 
           dy = 0;
           x = 0;
