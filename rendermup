@@ -32,7 +32,7 @@ const argv = yargs
 
 const input = fs.readFileSync(argv._[0], 'utf8');
 const outputHtmlFilename = path.basename(argv._[0], ".mup") + ".html";
-const outputPngFilename = path.basename(argv._[0], ".mup") + ".png";
+const outputSvgFilename = path.basename(argv._[0], ".mup") + ".svg";
 
 const styles = `
 
@@ -228,19 +228,11 @@ do_draw(mindmup_json);
 
 /// -- end D3 code
 
-// create output files
-const svg2png = require('svg2png');
-
 fs.writeFile(outputHtmlFilename, d3n.html(), function () {
   console.log('>> Done. Open '+outputHtmlFilename+'" in a web browser');
 });
 
-//FIXME: there is double-rendering of intermediate node labels in the png
-//return;
-
-var svgBuffer = new Buffer(d3n.svgString(), 'utf-8');
-svg2png(svgBuffer, {width: width*4})
-  .then(buffer => fs.writeFile(outputPngFilename, buffer))
-  .catch(e => console.error('ERR:', e))
-  .then(err => console.log('>> Exported: "'+outputPngFilename+'"'));
+fs.writeFile(outputSvgFilename, d3n.svgString(), function () {
+  console.log('>> Exported: "'+outputSvgFilename+'"');
+});
 
