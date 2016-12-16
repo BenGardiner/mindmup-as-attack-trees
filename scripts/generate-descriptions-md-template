@@ -129,7 +129,7 @@ def print_other_headings(level, title, description):
 			previous_blank=True
 			print("\n%s Mitigation Required" % ('#' * (level+1)))
 		elif "EVITA:: " in description_line:
-			evita_line = description.split('|')
+			evita_line = description_line.split('|')
 			evita_tag = dict()
 			evita_tag['Node'] = title
 			evita_tag['FS'] = int(evita_line[1])
