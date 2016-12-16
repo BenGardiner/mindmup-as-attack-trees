@@ -109,8 +109,11 @@ do_draw = function(json) {
         if (argv.r) {
           elbow_point = d.parent.y;
           if (d.parent.parent === null) {
-            //TODO: set this to the minimum of all the elbow points of the siblings of d
-            elbow_point = (d.parent.y + (d.y - d.parent.y) / 2)
+            var min_y = d.y;
+            d.parent.children.forEach(function(entry){
+              min_y = Math.min(min_y, entry.y);
+            })
+            elbow_point = (d.parent.y + (min_y - d.parent.y) / 2)
           }
         }
 
