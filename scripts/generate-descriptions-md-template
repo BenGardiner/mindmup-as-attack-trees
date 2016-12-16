@@ -178,7 +178,9 @@ def get_description(node):
 
 	if detect_html(description):
 		description = text_maker.handle(description)
-	
+
+	#remove line breaks between '|' -- to preserve tables in 1.0 mindmups (that end up in multiple <div>)
+	description = re.sub(r'\|\n+\|', '|\n|', description, re.M)
 	return description
 
 def do_tops():
