@@ -95,6 +95,7 @@ do_draw = function(json) {
 
   var margin = {top: 40, right: 40, bottom: 40, left: 40};
 
+  var text_line_height = 10 * 1.1;
   var node_width_size;
   var node_height_size;
   if (argv.width !== -1 && argv.height == -1) {
@@ -102,20 +103,20 @@ do_draw = function(json) {
     root_node.each(function(d){
       max_depth = Math.max(max_depth, d.depth);
     });
-    available_text_width = (argv.width - margin.left - margin.right) / (max_depth+1);
+    available_text_width = Math.floor((argv.width - margin.left - margin.right) / (max_depth+1));
     node_width_size = available_text_width;
 
     max_text_height = 0;
     root_node.each(function(d){
       if (argv.r && typeof d.children !== 'undefined') return;
 
-      approx_height = Math.ceil(approxTextWidth(d.data.title) / available_text_width) * 10 * 1.1;
+      approx_height = Math.ceil(approxTextWidth(d.data.title) / available_text_width) * text_line_height;
       max_text_height = Math.max(max_text_height, approx_height);
     });
     node_height_size = max_text_height;
 
     if (argv.r) {
-      node_height_size = node_height_size * 1.1;
+      node_height_size = node_height_size * 1.2;
     }
   }
 
@@ -132,13 +133,26 @@ do_draw = function(json) {
     tree_maker = d3.tree();
   }
 
-  function is_freeheight_layout() { return argv.height == -1; }
+  function is_freeheight_layout() { return argv.height == -1 && !argv.r; }
 
   var tree;
   if (is_freeheight_layout()) {
     tree = tree_maker.nodeSize([node_height_size, node_width_size]); //TODO why's all my stuff rotated 90deg?
   } else {
-    tree = tree_maker.size([argv.height - margin.top - margin.bottom, width-160]);
+    var height;
+    if (argv.r) {
+      leaf_count = 0;
+      root_node.each(function(d){
+        if (typeof d.children !== 'undefined') return;
+
+        leaf_count = leaf_count + 1;
+      });
+
+      height = (node_height_size + text_line_height) * leaf_count + 2 * text_line_height;
+    } else {
+      height = argv.height - margin.top - margin.bottom;
+    }
+    tree = tree_maker.size([height, width-160]);
   }
 
   var tree_data = tree(root_node).descendants().slice(1);
@@ -155,15 +169,12 @@ do_draw = function(json) {
     });
   }
 
-  // calculate the overall height and width
-  max_y = 0;
+  // calculate the overall height
   max_x = 0;
   root_node.each(function(d){
     max_x = Math.max(max_x, d.x);
-    max_y = Math.max(max_y, d.y);
   });
 
-  width = max_y + node_width_size;
   height = max_x + node_height_size;
   total_width = width + margin.left + margin.right;
   total_height = height + margin.top + margin.bottom;
@@ -181,8 +192,8 @@ do_draw = function(json) {
 
     text_wrap_width = Math.min(text_wrap_width, d.y - d.parent.y);
   });
-
   text_wrap_width = 0.9 * text_wrap_width;
+
   // In a dendrogram, give the leaf nodes more room -- but do it after sizing to *compensate* for the d3 rendering, not influence it.
   root_node.each(function(d){
     if (argv.r && typeof d.children === 'undefined') {
