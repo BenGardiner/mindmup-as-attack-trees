@@ -208,6 +208,7 @@ do_draw = function(json) {
   if (argv.r) {
     root_node.each(function(d){
       if (typeof d.children !== 'undefined') return;
+      if (d.parent === null) return;
 
       text_line_count = Math.ceil(approxTextWidth(d.data.title) / text_wrap_width);
       text_height = text_line_height * text_line_count;
