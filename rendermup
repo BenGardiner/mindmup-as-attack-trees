@@ -46,14 +46,18 @@ const styles = `
 }
 
 .node--internal circle {
-  stroke: #333;
+  stroke: #d3d3d3;
   fill: #FFF;
+}
+
+.node--leaf circle {
+  fill: #000;
 }
 
 .link {
   fill: none;
-  stroke: #c7c7c7;
-  stroke-opacity: 0.33;
+  stroke: #d3d3d3;
+  stroke-opacity: 1.0;
   stroke-width: 1.5px;
 }
 
