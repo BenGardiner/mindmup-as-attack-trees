@@ -33,6 +33,7 @@ const argv = yargs
 const input = fs.readFileSync(argv._[0], 'utf8');
 const outputHtmlFilename = path.basename(argv._[0], ".mup") + ".html";
 const outputSvgFilename = path.basename(argv._[0], ".mup") + ".svg";
+const outputPngFilename = path.basename(argv._[0], ".mup") + ".png";
 
 const styles = `
 
@@ -47,10 +48,6 @@ const styles = `
 .node--internal circle {
   stroke: #333;
   fill: #FFF;
-}
-
-.node--internal text {
-  text-shadow: 0 1px 0 #fff, 0 -1px 0 #fff, 1px 0 0 #fff, -1px 0 0 #fff;
 }
 
 .link {
@@ -270,7 +267,6 @@ do_draw = function(json) {
       return arrLineCreatedCount;
   }
 
-  //TODO: add vertical offset or do 'separation function' magic to keep the labels from overlapping
   var node = g.selectAll(".node")
     .data(root_node.descendants())
     .enter().append("g")
@@ -280,7 +276,6 @@ do_draw = function(json) {
   node.append("circle")
       .attr("r", 2.5);
 
-  //TODO put the left edge of the leaf node text at - 1/2 distance H distance between other levels to better use space for text.
   node.append("text")
       .attr("dy", 3)
       .attr("x", function(d) { return d.children ? -8 : 8; })
@@ -313,11 +308,21 @@ do_draw(mindmup_json);
 
 /// -- end D3 code
 
+// create output files
+const svg2png = require('svg2png');
+
 fs.writeFile(outputHtmlFilename, d3n.html(), function () {
   console.log('>> Done. Open '+outputHtmlFilename+'" in a web browser');
 });
 
-fs.writeFile(outputSvgFilename, d3n.svgString(), function () {
+var svg_string = d3n.svgString();
+fs.writeFile(outputSvgFilename, svg_string, function () {
   console.log('>> Exported: "'+outputSvgFilename+'"');
 });
+
+var svgBuffer = new Buffer(svg_string, 'utf-8');
+svg2png(svgBuffer, {width: width*4})
+  .then(buffer => fs.writeFile(outputPngFilename, buffer))
+  .catch(e => console.error('ERR:', e))
+  .then(err => console.log('>> Exported: "'+outputPngFilename+'"'));
 
