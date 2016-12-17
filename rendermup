@@ -94,7 +94,7 @@ do_draw = function(json) {
       };
   })();
 
-  var margin = {top: 40, right: 40, bottom: 40, left: 40};
+  var margin = {top: 10, right: 24, bottom: 4, left: 40};
 
   var text_line_height = 10 * 1.1;
   var node_width_size;
@@ -149,18 +149,18 @@ do_draw = function(json) {
         leaf_count = leaf_count + 1;
       });
 
-      height = (node_height_size + text_line_height) * leaf_count + 2 * text_line_height;
+      height = (node_height_size + text_line_height) * leaf_count + 1 * text_line_height;
     } else {
       height = argv.height - margin.top - margin.bottom;
     }
-    tree = tree_maker.size([height, width-160]);
+    tree = tree_maker.size([height, width - margin.left - margin.right]);
   }
 
   var tree_data = tree(root_node).descendants().slice(1);
 
   // For freeheight layouts, translate to keep all nodes in-view
-  if (is_freeheight_layout()) {
-    var min_x = 0;
+  if (true) {
+    var min_x = Number.MAX_SAFE_INTEGER;
     root_node.each(function(d){
       min_x = Math.min(min_x, d.x);
     });
