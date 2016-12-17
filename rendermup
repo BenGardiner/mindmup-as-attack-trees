@@ -196,11 +196,29 @@ do_draw = function(json) {
   text_wrap_width = 0.9 * text_wrap_width;
 
   // In a dendrogram, give the leaf nodes more room -- but do it after sizing to *compensate* for the d3 rendering, not influence it.
-  root_node.each(function(d){
-    if (argv.r && typeof d.children === 'undefined') {
-      d.y = d.y - node_width_size / 2;
-    }
-  });
+  if (argv.r) {
+    root_node.each(function(d){
+      if (typeof d.children === 'undefined') {
+        d.y = d.y - node_width_size / 2;
+      }
+    });
+  }
+
+  // In a dendrogram, bump the next sibling of blocks with looooong text
+  if (argv.r) {
+    root_node.each(function(d){
+      if (typeof d.children !== 'undefined') return;
+
+      text_line_count = Math.ceil(approxTextWidth(d.data.title) / text_wrap_width);
+      text_height = text_line_height * text_line_count;
+
+      d.parent.children.forEach(function(child){
+        if (child.x > d.x && child.x < d.x + text_height) {
+          child.x = child.x + text_line_height;
+        }
+      });
+    });
+  }
 
   var link = g.selectAll(".link")
     .data(tree_data)
