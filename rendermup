@@ -247,6 +247,8 @@ do_draw = function(json) {
           y = 3;
           if (alignmentBase === 'hanging') {
             y = 12;
+          } else if (alignmentBase === 'ideographic') {
+            y = -6;
           }
 
           var tspan = text.text(null).append("tspan").attr("x", x).attr("y", y).attr("dy", dy + "em");
@@ -293,7 +295,7 @@ do_draw = function(json) {
             return "middle";
           }
           if (d.parent === null) {
-            return "middle";
+            return "ideographic";
           }
           return d.children ? "hanging" : "baseline";
       })
