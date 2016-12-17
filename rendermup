@@ -257,12 +257,19 @@ do_draw = function(json) {
           var textAlign = text.style('text-anchor') || 'left';
           var alignmentBase = text.style('alignment-baseline') || 'baseline';
           var adjusted_width = width;
+          if (text.datum().parent === null) {
+            adjusted_width = width/2 + margin.left;
+          }
 
           dy = 0;
           x = 0;
           if (textAlign === 'start') {
             x = 8;
           }
+          if (text.datum().parent === null) {
+            x = x - margin.left;
+          }
+
           y = 3;
           if (alignmentBase === 'hanging') {
             y = 12;
