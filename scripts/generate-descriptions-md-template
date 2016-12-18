@@ -232,6 +232,16 @@ def get_description(node):
 
 	#remove special tags (e.g. SUBTREE:: OBJECTIVE:: EVITA::)
 	description = description.replace('SUBTREE::\n', '').replace('OBJECTIVE::\n','')
+
+	#remove lines with only whitespace
+	description = re.sub(r'\n\s+?\n', '\n', description, re.M)
+
+	#remove trailing newlines
+	description = re.sub(r'\n+$', '', description, re.M)
+
+	#remove leading newlines
+	description = re.sub(r'^\n+', '', description, re.M)
+
 	return description
 
 def do_tops():
