@@ -182,6 +182,9 @@ def get_description(node):
 
 	#remove line breaks between '|' -- to preserve tables in 1.0 mindmups (that end up in multiple <div>)
 	description = re.sub(r'\|\n+\|', '|\n|', description, re.M)
+
+	#remove special tags (e.g. SUBTREE:: OBJECTIVE:: EVITA::)
+	description = description.replace('SUBTREE::\n', '').replace('OBJECTIVE::\n','')
 	return description
 
 def do_tops():
