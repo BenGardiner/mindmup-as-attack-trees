@@ -20,7 +20,10 @@ def trim_label(node):
 	if not node.get('title', '').find('(*)') == -1:
 		return
 
-	node.update({'title': re.sub(r'^\d+\..*?\s', '', node.get('title', ''))})
+	title = node.get('title', '')
+	title = re.sub(r'^\d+\..*?\s', '', title)
+	title = re.sub(r'\(\d+\..*?\)', '(*)', title)
+	node.update({'title': title})
 	return
 
 if len(sys.argv) < 1:
