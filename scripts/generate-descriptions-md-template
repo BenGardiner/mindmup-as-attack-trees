@@ -114,6 +114,13 @@ def print_other_headings(level, title, description):
 	threat_heading_found=False
 	mitigation_heading_found=False
 	previous_blank=False
+
+	if "out of scope".lower() in description.lower():
+		#don't emit the 'missing' sections for out of scope nodes
+		classification_heading_found=True
+		threat_heading_found=True
+		mitigation_heading_found=True
+
 	for description_line in description_lines:
 		if "# Attack Classification".lower() in description_line.lower() or description_line.strip().lower().endswith("Attack Classification:".lower()):
 			classification_heading_found=True
