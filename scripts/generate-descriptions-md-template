@@ -78,7 +78,6 @@ def add_label(depth, cuts, node):
 		return
 
 	if not node.get('title', '').find('(*)') == -1:
-		do_ideas(depth, cuts, node)
 		return
 
 	description = get_description(node)
