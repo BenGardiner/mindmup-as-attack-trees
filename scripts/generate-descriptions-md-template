@@ -33,7 +33,7 @@ def emit_tree_snapshot(title, node):
 
 	truncated.update({'attr' : { 'theme': 'straightlines'}})
 
-	title = title.replace("?", "_")
+	title = title.replace("?", "_").replace("/", "_")
 
 	f1 = open('%s.mup' % title, 'w')
 	f1.write(json.dumps(truncated))
@@ -163,7 +163,7 @@ def print_other_headings(level, title, description):
 
 def add_graphic(node, title):
 	emit_tree_snapshot(title, node)
-	print("\n![%s tree snapshot](%s.png)" % (title, title.replace("?", "_")))
+	print("\n![*%s Attack (Sub)Tree*](%s.png){ width=100%% }" % (title, title.replace("?", "_").replace('/', '_')))
 
 def detect_html(text):
 	return bool(BeautifulSoup(text, "html.parser").find())
