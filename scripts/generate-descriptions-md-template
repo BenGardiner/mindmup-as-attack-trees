@@ -264,7 +264,7 @@ def do_tops():
 	depth = 0
 	heading_level = 1
 	tops_count = 0
-	seconds_count = 0
+	seconds_heading_done = False
 
 	while len(tops) + len(seconds) > 0:
 		if len(tops) > 0:
@@ -272,16 +272,16 @@ def do_tops():
 			tops_count = tops_count + 1
 		else:
 			node = seconds.pop(0)
-			seconds_count = seconds_count + 1
 
 		title = node.get('title', '')
 
 		if tops_count == 1:
 			print("%s Attack Trees: Attacker Objectives" % ('#' * 1))
 		else:
-			if seconds_count == 1:
+			if not seconds_heading_done:
 				print("\n\n%s Attack Trees: Attacker Methods Etc." % ('#' * 1))
 				print("\n In the attack tree analysis, the attacker methods follow from the objectives and these methods give rise to (many) attack vectors.\n\nIn the sections that follow we will examine the attack methods (the immediate children of the objectives) and the attack paths that can lead to an attacker successfully completing them.")
+				seconds_heading_done = True
 			print_title_headings_for_goal_node(heading_level, title)
 
 		add_graphic(node, title)
