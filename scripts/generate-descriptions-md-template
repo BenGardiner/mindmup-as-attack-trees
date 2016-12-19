@@ -76,6 +76,11 @@ def is_objective(node):
 	raw_description = get_raw_description(node)
 	return 'OBJECTIVE::' in raw_description
 
+def is_node_a_reference(node):
+	title = node.get('title', '')
+
+	return (not title.find('(*)') == -1) or (not re.search(r'\(\d+\..*?\)', title) is None)
+
 def add_label(depth, cuts, node):
 	global tops
 	global seconds
@@ -107,7 +112,7 @@ def add_label(depth, cuts, node):
 		do_ideas(depth, cuts, node)
 		return
 
-	if not node.get('title', '').find('(*)') == -1:
+	if is_node_a_reference(node):
 		return
 
 	description = get_description(node)
