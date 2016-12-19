@@ -153,7 +153,7 @@ do_draw = function(json) {
     } else {
       height = argv.height - margin.top - margin.bottom;
     }
-    tree = tree_maker.size([height, width - margin.left - margin.right]);
+    tree = tree_maker.size([height, width - node_width_size / 2 - margin.right]);
   }
 
   var tree_data = tree(root_node).descendants().slice(1);
