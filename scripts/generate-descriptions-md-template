@@ -19,7 +19,10 @@ seconds = list()
 
 def truncate(node, cuts, first):
 	if not first and is_cut(node, cuts) and 'ideas' in node:
-		#TODO change this node title to a reference node
+		title = node.get('title','')
+		parsed_title = re.match(r'(\d+\..*?)\s(.*?)$',title).groups()
+
+		node.update({'title': "%s (%s)" % (parsed_title[1], parsed_title[0])})
 		if not 'attr' in node:
 			node.update({'attr': dict()})
 		node['attr'].update({'collapsed': True})
