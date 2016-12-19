@@ -54,6 +54,11 @@ const styles = `
   fill: #000;
 }
 
+.node--leaf_ref circle {
+  stroke: #000;
+  fill: #FFF;
+}
+
 .link {
   fill: none;
   stroke: #d3d3d3;
@@ -300,7 +305,18 @@ do_draw = function(json) {
   var node = g.selectAll(".node")
     .data(root_node.descendants())
     .enter().append("g")
-      .attr("class", function(d) { return "node" + (d.children ? " node--internal" : " node--leaf"); })
+      .attr("class", function(d) {
+        if (typeof d.children === 'undefined') {
+          if (/\(\d+\..*?\)/.test(d.data.title)) {
+            return "node node--leaf_ref";
+          } else {
+            return "node node--leaf";
+          }
+        } else {
+          return "node node--internal";
+        }
+        return "node" + (d.children ? " node--internal" : " node--leaf"); 
+      })
       .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
 
   node.append("circle")
