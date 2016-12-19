@@ -10,7 +10,7 @@ import ipdb
 def info(type, value, tb):
     ipdb.pm()
 
-sys.excepthook = info
+#sys.excepthook = info
 
 levels_count = dict()
 nodes_lookup = dict()
@@ -172,15 +172,26 @@ def do_node_secondpass(node, nodes_context):
 			update_node_weight(node, get_min_weight_of_children(node))
 
 		if get_node_weight(node) is None:
-		    print("ERROR None propagating through weights at node: %s" % get_node_title(node))
+			print("ERROR None propagating through weights at node: %s" % get_node_title(node))
 		else:
-		    if math.isnan(get_node_weight(node)):
-			print("ERROR NaN propagting through weights at node: %s" % get_node_title(node))
-
-		    if math.isinf(get_node_weight(node)):
-			print("ERROR Inf propagating through weights at node: %s" % get_node_title(node))
+			if math.isnan(get_node_weight(node)):
+				print("ERROR NaN propagting through weights at node: %s (%s)" % (get_node_title(node),nodes_context))
 
 	return
+
+def do_children_checkinfs(node, nodes_context):
+	for child in get_node_children(node):
+		do_node_checkinfs(child, nodes_context)
+	return
+
+def do_node_checkinfs(node, nodes_context):
+	if not is_node_a_leaf(node):
+	    nodes_context.append(get_node_title(node))
+	    do_children_checkinfs(node, nodes_context)
+	    nodes_context.pop()
+
+	if math.isinf(get_node_weight(node)):
+		print("ERROR leftover %s at %s" % (get_node_weight(node), get_node_title(node)))
 
 if len(sys.argv) < 2:
 	fd_in=sys.stdin
@@ -197,10 +208,14 @@ if 'id' in data and data['id'] == 'root':
 	do_children_firstpass(data['ideas']['1'])
 	do_node_secondpass(data['ideas']['1'], nodes_context)
 	top_weight = get_node_weight(data['ideas']['1'])
+	#TODO check for any leftover infs and fix 'em
+	do_node_checkinfs(data['ideas']['1'], nodes_context)
 else:
 	do_children_firstpass(data)
 	do_node_secondpass(data, nodes_context)
 	top_weight = get_node_weight(data)
+	#TODO check for any leftover infs and fix 'em
+	do_node_checkinfs(data, nodes_context)
 
 if top_weight != 0:
 	print("ERROR: weights not propagated correctly through tree. Expecting 0. Got %s" % top_weight)
