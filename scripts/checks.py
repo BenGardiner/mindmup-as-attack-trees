@@ -14,6 +14,7 @@ def info(type, value, tb):
 
 levels_count = dict()
 nodes_lookup = dict()
+fixups_queue = list()
 
 def get_node_children(node):
 	return OrderedDict(sorted(node.get('ideas', dict()).iteritems(), key=lambda t: float(t[0]))).values()
@@ -80,7 +81,8 @@ def is_node_a_reference(node):
 	return (not title.find('(*)') == -1) or (not re.search(r'\(\d+\..*?\)', title) is None)
 
 def is_node_weigthed(node):
-	return (not get_node_weight(node) is None) and (not math.isnan(get_node_weight(node)))
+	weight = get_node_weight(node)
+	return (not weight is None) and (not math.isnan(weight)) and (not math.isinf(weight))
 
 def update_node_weight(node, weight):
 	if node.get('attr', None) is None:
@@ -88,12 +90,15 @@ def update_node_weight(node, weight):
 	
 	node.get('attr').update({'weight': weight})
 
-def swap_infs_of_children(node):
+def pos_infs_of_children(node):
+	for child in get_node_children(node):
+		if get_node_weight(child) == float('-inf'):
+			update_node_weight(child, float('inf'))
+
+def neg_infs_of_children(node):
 	for child in get_node_children(node):
 		if get_node_weight(child) == float('inf'):
 			update_node_weight(child, float('-inf'))
-		elif get_node_weight(child) == float('-inf'):
-			update_node_weight(child, float('inf'))
 
 def get_max_weight_of_children(node):
 	child_maximum = float('-inf')
@@ -134,6 +139,7 @@ def do_children_secondpass(node, nodes_context):
 
 def do_node_secondpass(node, nodes_context):
 	global nodes_lookup
+	global fixups_queue
 
 	if is_node_weigthed(node):
 		return
@@ -154,30 +160,48 @@ def do_node_secondpass(node, nodes_context):
 			do_node_secondpass(node_referent, nodes_context)
 
 			update_node_weight(node,get_node_weight(node_referent))
-
-		return
-
-	if is_node_a_leaf(node):
-		update_node_weight(node, 0)
 	else:
-		nodes_context.append(get_node_title(node))
-		do_children_secondpass(node, nodes_context)
-		nodes_context.pop()
-
-		if node.get('title', None) == 'AND':
-		#translate the 'inf' which are the identities of min with -inf which are the identities of max
-			swap_infs_of_children(node)
-			update_node_weight(node, get_max_weight_of_children(node))
+		if is_node_a_leaf(node):
+			update_node_weight(node, 0)
 		else:
-			update_node_weight(node, get_min_weight_of_children(node))
+			nodes_context.append(get_node_title(node))
+			do_children_secondpass(node, nodes_context)
+			nodes_context.pop()
 
-		if get_node_weight(node) is None:
-			print("ERROR None propagating through weights at node: %s" % get_node_title(node))
-		else:
-			if math.isnan(get_node_weight(node)):
-				print("ERROR NaN propagting through weights at node: %s (%s)" % (get_node_title(node),nodes_context))
+			if node.get('title', None) == 'AND':
+			#translate the 'inf' which are the identities of min with -inf which are the identities of max
+				neg_infs_of_children(node)
+				update_node_weight(node, get_max_weight_of_children(node))
+			else:
+				pos_infs_of_children(node)
+				update_node_weight(node, get_min_weight_of_children(node))
 
+			if get_node_weight(node) is None:
+				print("ERROR None propagating through weights at node: %s" % get_node_title(node))
+			else:
+				if math.isnan(get_node_weight(node)):
+					print("ERROR NaN propagting through weights at node: %s (%s)" % (get_node_title(node),nodes_context))
+
+	if math.isinf(get_node_weight(node)):
+		fixups_queue.append(node)
 	return
+
+def do_fixups(nodes_context):
+    global fixups_queue
+    fixups_len = len(fixups_queue)
+
+    while len(fixups_queue) > 0:
+	fixups_this_time = list(fixups_queue)
+	fixups_queue = list()
+	for node in fixups_this_time:
+		do_node_secondpass(node, nodes_context)
+	
+	if len(fixups_queue) >= fixups_len:
+	    print("ERROR couldn't resolve remaining infs %s" % fixups_queue)
+	    break
+	else:
+	    fixups_len = len(fixups_queue)
+
 
 def do_children_checkinfs(node, nodes_context):
 	for child in get_node_children(node):
@@ -209,12 +233,14 @@ if 'id' in data and data['id'] == 'root':
 	do_node_secondpass(data['ideas']['1'], nodes_context)
 	top_weight = get_node_weight(data['ideas']['1'])
 	#TODO check for any leftover infs and fix 'em
+	do_fixups(nodes_context)
 	do_node_checkinfs(data['ideas']['1'], nodes_context)
 else:
 	do_children_firstpass(data)
 	do_node_secondpass(data, nodes_context)
 	top_weight = get_node_weight(data)
 	#TODO check for any leftover infs and fix 'em
+	do_fixups(nodes_context)
 	do_node_checkinfs(data, nodes_context)
 
 if top_weight != 0:
