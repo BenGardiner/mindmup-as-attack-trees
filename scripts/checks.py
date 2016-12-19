@@ -152,7 +152,7 @@ def do_node_secondpass(node, nodes_context):
 
 		if (not get_node_weight(node_referent) is None) and (math.isnan(get_node_weight(node_referent))):
 			#is referent in-progress? then we have a loop. update the reference node with the identity of the tree reduction operation and return
-			update_node_weight(node, float('inf'))
+			update_node_weight(node, float('-inf'))
 		else:
 			#otherwise, descend through referent's children
 
@@ -169,12 +169,11 @@ def do_node_secondpass(node, nodes_context):
 			nodes_context.pop()
 
 			if node.get('title', None) == 'AND':
-			#translate the 'inf' which are the identities of min with -inf which are the identities of max
-				neg_infs_of_children(node)
-				update_node_weight(node, get_max_weight_of_children(node))
-			else:
 				pos_infs_of_children(node)
 				update_node_weight(node, get_min_weight_of_children(node))
+			else:
+				neg_infs_of_children(node)
+				update_node_weight(node, get_max_weight_of_children(node))
 
 			if get_node_weight(node) is None:
 				print("ERROR None propagating through weights at node: %s" % get_node_title(node))
