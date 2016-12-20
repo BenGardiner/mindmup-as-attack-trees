@@ -274,6 +274,9 @@ do_draw = function(json) {
           if (text.datum().parent === null) {
             adjusted_width = width/2 + margin.left;
           }
+          else if (typeof text.datum().children === 'undefined' && (! argv.r)) {
+            adjusted_width = 5/8 * width;
+          }
 
           dy = 0;
           x = 0;
@@ -292,7 +295,7 @@ do_draw = function(json) {
           }
 
           var tspan = text.text(null).append("tspan").attr("x", x).attr("y", y).attr("dy", dy + "em");
-          //noinspection JSHint
+
           while (word = words.pop()) {
               line.push(word);
               tspan.text(line.join(" "));
