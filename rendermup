@@ -75,7 +75,8 @@ const styles = `
 }
 
 `;
-const markup = '<meta http-equiv="refresh" content="3" ><div id="container"><div id="chart"></div></div>';
+markup = '<div id="container"><div id="chart"></div></div>';
+//markup = '<meta http-equiv="refresh" content="3">' + markup;
 var options = {selector:'#chart', svgStyles:styles, container:markup, d3Module:d3};
 
 var d3n = new D3Node(options);
@@ -247,8 +248,12 @@ do_draw = function(json) {
     .enter().append("path")
       .attr("class", "link")
       .style("stroke", function(d) {
-        if (typeof d.parent.data.attr.evita_apt !== 'undefined')
+        if (typeof d.parent.data.attr !== 'undefined' &&
+            typeof d.parent.data.attr.evita_apt !== 'undefined' &&
+            typeof d.data.attr !== 'undefined' &&
+            typeof d.data.attr.evita_apt !== 'undefined') {
           return apt_colormap(d.data.attr.evita_apt);
+        }
       })
       .attr("d", function(d) {
         elbow_point = (d.parent.y + 9*(d.y - d.parent.y) / 10)
@@ -371,7 +376,8 @@ do_draw = function(json) {
 
   node.append("circle")
       .style("stroke", function(d) {
-        return apt_colormap(d.data.attr.evita_apt);
+        if (typeof d.data.attr !== 'undefined')
+          return apt_colormap(d.data.attr.evita_apt);
       })
       .attr("r", 2.5);
 
