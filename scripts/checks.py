@@ -22,9 +22,17 @@ def get_node_children(node):
 def is_node_a_leaf(node):
 	return len(get_node_children(node)) == 0
 
-def get_node_description(node):
-	#TODO: convert html to text, use v2 notes if present etc.
-	return node.get('attr', dict()).get('attachment', dict()).get('content', '')
+def is_objective(node):
+	raw_description = get_raw_description(node)
+	return 'OBJECTIVE::' in raw_description
+
+def get_raw_description(node):
+	#prefer the mindmup 2.0 'note' to the 1.0 'attachment'
+	description = node.get('attr', dict()).get('note', dict()).get('text', '')
+	if description is '':
+		description = node.get('attr', dict()).get('attachment', dict()).get('content', '')
+
+	return description
 
 def do_children_firstpass(node):
 	for child in get_node_children(node):
@@ -57,8 +65,11 @@ def do_node_firstpass(node):
 	else:
 		print("ERROR duplicate node found: %s" % node_title)
 
-	if (not is_node_a_reference(node)) and is_node_a_leaf(node) and get_node_description(node).find('EVITA::') == -1:
+	if (not is_node_a_reference(node)) and is_node_a_leaf(node) and get_raw_description(node).find('EVITA::') == -1:
 		print("ERROR leaf node w/o (complete) description text: %s" % node_title)
+
+	if is_objective(node) and get_raw_description(node).find('EVITA::') == -1:
+		print("ERROR Objective node w/o EVITA:: marker: %s" % node_title)
 
 	#TODO ERROR Node with labeled (Out of Scope) without EVITA:: *inf*
 
