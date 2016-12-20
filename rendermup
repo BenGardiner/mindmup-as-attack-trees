@@ -108,7 +108,7 @@ do_draw = function(json) {
       };
   })();
 
-  var margin = {top: 10, right: 24, bottom: 4, left: 40};
+  var margin = {top: 10, right: 24, bottom: 22, left: 40};
 
   var text_line_height = 10 * 1.1;
   var node_width_size;
