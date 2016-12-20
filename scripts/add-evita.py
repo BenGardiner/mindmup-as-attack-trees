@@ -304,6 +304,29 @@ def do_fixups(nodes_context):
 	else:
 		fixups_len = len(fixups_queue)
 
+def do_children_thirdpass(node, nodes_context):
+    for child in get_node_children(node):
+	do_node_thirdpass(child, nodes_context)
+    return
+
+def do_node_thirdpass(node, nodes_context):
+	global nodes_lookup
+	global fixups_queue
+
+	if not is_node_a_leaf(node):
+		nodes_context.append(get_node_title(node))
+		do_children_thirdpass(node, nodes_context)
+		nodes_context.pop()
+
+		if node.get('title', None) == 'AND':
+			pos_infs_of_children(node)
+			update_node_apt(node, get_min_apt_of_children(node))
+		else:
+			neg_infs_of_children(node)
+			update_node_apt(node, get_max_apt_of_children(node))
+
+	return
+
 def do_children_riskspass(node, nodes_context):
 	for child in get_node_children(node):
 		do_node_riskspass(child, nodes_context)
@@ -350,6 +373,7 @@ else:
 do_children_firstpass(root_node)
 do_node_secondpass(root_node, nodes_context)
 do_fixups(nodes_context)
+do_node_thirdpass(root_node, nodes_context)
 do_node_riskspass(root_node, nodes_context)
 
 str = json.dumps(data, indent=2, sort_keys=True)
