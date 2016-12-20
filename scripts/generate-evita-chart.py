@@ -158,14 +158,19 @@ def get_probability_label(evita_probability):
 	else:
 		return "unknown"
 
-def emit_row(riskpoint_node, node):
-	print("|%s|%s|%s|%s|%s|%s|%s|%s" % (
+def emit_riskpoint_row(riskpoint_node):
+	print("|%s|%s|%s|%s|%s|%s|" % (
 		get_node_title(riskpoint_node),
 		get_risk_label(riskpoint_node.get('attr').get('evita_sr')),
 		get_risk_label(riskpoint_node.get('attr').get('evita_pr')),
 		get_risk_label(riskpoint_node.get('attr').get('evita_fr')),
 		get_risk_label(riskpoint_node.get('attr').get('evita_or')),
-		get_probability_label(riskpoint_node.get('attr').get('evita_apt')),
+		get_probability_label(riskpoint_node.get('attr').get('evita_apt'))
+	))
+	return
+
+def emit_attackvector_row(riskpoint_node, node):
+	print("|%s|%s|" % (
 		get_node_title(node),
 		get_probability_label(node.get('attr').get('evita_apt'))
 	))
@@ -192,7 +197,7 @@ def do_each_attackvector(node, nodes_context):
 		elif not is_outofscope(node):
 			if not node.get('done', None) is riskpoint_node:
 				node.update({'done': riskpoint_node})
-				emit_row(riskpoint_node, node)
+				emit_attackvector_row(riskpoint_node, node)
 
 	node.update({'inprogress': None})
 	node.update({'done': riskpoint_node})
@@ -209,8 +214,14 @@ def do_each_riskpoint(node, nodes_context):
 	global riskpoint_node
 
 	if is_riskpoint(node):
+		print("\n\n|Attack Method|Safety Risk|Privacy Risk|Financial Risk|Operational Risk|Combined Attack Probability|")
+		print("|---------------|-----------|------------|--------------|----------------|---------------------------|")
 		riskpoint_node = node
+		emit_riskpoint_row(riskpoint_node)
 
+		print("\n\nThe following table summarizes the attack vector nodes contributing to the risks of above attack method and their Probability (derived using the EVITA method as discussed in this document)")
+		print("\n\n|Attack Vector|Attack Vector Probability|")
+		print("|-------------|-------------------------|")
 		do_each_attackvector(node, nodes_context)
 		return
 
@@ -243,7 +254,6 @@ print("\n\n# EVITA Risk Analysis: Attack Tree Tables")
 for objective in objectives:
 	print("\n\n### Attack Tree Table for %s" % get_node_title(objective))
 	objective_node = objective
-	print("\n|Attack Method|Safety Risk|Privacy Risk|Financial Risk|Operational Risk|Combined Attack Probability|Attack Vector|Attack Vector Probability|")
-	print("|---------------|-----------|------------|--------------|----------------|---------------------------|-------------|-------------------------|")
+	print("\nIn this section we will summarize the risks of all the attack methods of the objective *%s* and the attack vectors contributing to those risks (derived using the EVITA method as discussed in this document). NB: some attack methods may be the same node as the attack objective in what follows." % get_node_title(objective_node))
 	do_each_riskpoint(objective, nodes_context)
 
