@@ -70,7 +70,7 @@ const styles = `
 .link {
   fill: none;
   stroke: #d3d3d3;
-  stroke-opacity: 1.0;
+  stroke-opacity: 0.7;
   stroke-width: 1.5px;
 }
 
@@ -172,7 +172,7 @@ do_draw = function(json) {
   var tree_data = tree(root_node).descendants().slice(1);
 
   // For freeheight layouts, translate to keep all nodes in-view
-  if (true) {
+  if (is_freeheight_layout()) {
     var min_x = Number.MAX_SAFE_INTEGER;
     root_node.each(function(d){
       min_x = Math.min(min_x, d.x);
@@ -234,10 +234,21 @@ do_draw = function(json) {
     });
   }
 
+  // a colormap for EVITA attack probability total where 1 is remote and 5 is highly likely
+  apt_colormap = function palette(min, max) {
+    var d = (max-min)/5;
+    return d3.scaleThreshold()
+      .range(['#add8e6','#a3eb92','#ffd700','#ffce69','#ffc0cb'])
+      .domain([min+1*d,min+2*d,min+3*d,min+4*d,min+5*d]);
+  }(1,5);
+
   var link = g.selectAll(".link")
     .data(tree_data)
     .enter().append("path")
       .attr("class", "link")
+      .style("stroke", function(d) {
+        return apt_colormap(d.data.attr.evita_apt);
+      })
       .attr("d", function(d) {
         elbow_point = (d.parent.y + 9*(d.y - d.parent.y) / 10)
 
@@ -358,6 +369,9 @@ do_draw = function(json) {
       .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
 
   node.append("circle")
+      .style("stroke", function(d) {
+        return apt_colormap(d.data.attr.evita_apt);
+      })
       .attr("r", 2.5);
 
   node.append("text")
