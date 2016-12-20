@@ -219,7 +219,7 @@ def do_each_riskpoint(node, nodes_context):
 		riskpoint_node = node
 		emit_riskpoint_row(riskpoint_node)
 
-		print("\n\nThe following table summarizes the attack vector nodes contributing to the risks of above attack method and their Probability (derived using the EVITA method as discussed in this document)")
+		print("\n\nThe following table summarizes the attack vector nodes contributing to the risks of above attack method and their Probability (derived using the EVITA method as discussed in this document). NB: these are all of the attack vectors which contribute to the risks; however, to what degree they make a contribution is borne-out of the attack tree structure so please consult that for details of how much contribution they make individually.")
 		print("\n\n|Attack Vector|Attack Vector Probability|")
 		print("|-------------|-------------------------|")
 		do_each_attackvector(node, nodes_context)
