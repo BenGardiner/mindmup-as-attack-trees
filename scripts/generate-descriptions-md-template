@@ -46,7 +46,9 @@ def emit_tree_snapshot(title, node):
 	if not resources is None:
 		truncated.update({'resources': resources})
 
-	truncated.update({'attr' : { 'theme': 'straightlines'}})
+	if truncated.get('attr', None) is None:
+		truncated.update({'attr': dict()})
+	truncated.get('attr').update({ 'theme': 'straightlines'})
 
 	title = get_safe_filename(title)
 
