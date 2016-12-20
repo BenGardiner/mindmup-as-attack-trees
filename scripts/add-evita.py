@@ -49,6 +49,9 @@ def get_description(node):
 
 	return description
 
+def clamp_to_json_values(val):
+    return max(-1 * sys.float_info.max, min(val, sys.float_info.max))
+
 def parse_evita_raps(node):
 	if not 'EVITA::' in get_raw_description(node):
 		raise ValueError("couldn't find EVITA:: tag in leaf node", node)
@@ -64,11 +67,11 @@ def parse_evita_raps(node):
 
 		attr = node.get('attr')
 
-		attr.update({'evita_et': float(evita_line[5])})
-		attr.update({'evita_e': float(evita_line[6])})
-		attr.update({'evita_k': float(evita_line[7])})
-		attr.update({'evita_wo': float(evita_line[8])})
-		attr.update({'evita_eq': float(evita_line[9])})
+		attr.update({'evita_et': clamp_to_json_values(float(evita_line[5]))})
+		attr.update({'evita_e':  clamp_to_json_values(float(evita_line[6]))})
+		attr.update({'evita_k':  clamp_to_json_values(float(evita_line[7]))})
+		attr.update({'evita_wo': clamp_to_json_values(float(evita_line[8]))})
+		attr.update({'evita_eq': clamp_to_json_values(float(evita_line[9]))})
 
 	return
 
@@ -104,10 +107,10 @@ def parse_evita_severities(node):
 		evita_line = line.strip().split('|')
 		attr = node.get('attr')
 
-		attr.update({'evita_fs': float(evita_line[1])})
-		attr.update({'evita_os': float(evita_line[2])})
-		attr.update({'evita_ps': float(evita_line[3])})
-		attr.update({'evita_ss': float(evita_line[4])})
+		attr.update({'evita_fs': clamp_to_json_values(float(evita_line[1]))})
+		attr.update({'evita_os': clamp_to_json_values(float(evita_line[2]))})
+		attr.update({'evita_ps': clamp_to_json_values(float(evita_line[3]))})
+		attr.update({'evita_ss': clamp_to_json_values(float(evita_line[4]))})
 
 	return
 
