@@ -322,6 +322,7 @@ def do_node_riskspass(node, nodes_context):
 		derive_evita_risks(node, objective_node)
 		return
 
+	node.get('attr').pop('evita_apt')
 	do_children_riskspass(node, nodes_context)
 	objective_node = saved_objective
 
