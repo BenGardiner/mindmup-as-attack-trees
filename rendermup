@@ -260,6 +260,7 @@ do_draw = function(json) {
 
         if (argv.r) {
           elbow_point = d.parent.y;
+
           if (d.parent.parent === null) {
             var min_y = d.y;
             d.parent.children.forEach(function(entry){
@@ -269,8 +270,22 @@ do_draw = function(json) {
           }
         }
 
+        var this_childs_index = 0.0;
+        var siblings_count = 0.0;
+        if (d.parent !== null) {
+          var count = 0;
+          siblings_count = d.parent.children.length;
+          d.parent.children.forEach(function(entry){
+            count = count + 1;
+            if (entry == d && d.parent.children.length > 1) {
+              this_childs_index = (count - siblings_count / 2.0 - 0.5) * 2.0
+           }
+          })
+        }
         return "M" + d.parent.y + "," + d.parent.x
-            + "H" + elbow_point + "V" + d.x + "H" + d.y;
+            + "l" + Math.abs(this_childs_index) + "," + this_childs_index
+            + "H" + elbow_point
+            + "V" + d.x + "H" + d.y;
       });
 
   function d3TextWrap(text, width) {
