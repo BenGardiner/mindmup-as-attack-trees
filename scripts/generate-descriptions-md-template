@@ -225,7 +225,7 @@ def update_raw_description(node, description):
 def get_description(node):
 	global text_maker
 
-	description = get_raw_description(node)
+	description = get_raw_description(node) + '\n'
 
 	#TODO: convert special characters e.g. %lt => <
 	if detect_html(description):
@@ -235,18 +235,18 @@ def get_description(node):
 	description = re.sub(r'\|\n+\|', '|\n|', description, re.M)
 
 	#remove special tags (e.g. SUBTREE:: OBJECTIVE:: EVITA::)
-	description = description.replace('SUBTREE::\n', '').replace('OBJECTIVE::\n','').replace('RISK_HERE::', '')
+	description = description.replace('SUBTREE::', '').replace('OBJECTIVE::','').replace('RISK_HERE::', '')
 
 	description = re.sub(r'\nEVITA::.*\n', '\n\n', description, re.M)
 
-	#remove lines with only whitespace
-	description = re.sub(r'\n\s+\n', '\n\n', description, re.M)
+	#remove trailing whitespace
+	description = re.sub(r'\s+$', '\n', description, flags=re.M)
 
 	#remove trailing newlines
-	description = re.sub(r'\n+$', '', description, re.M)
+	description = re.sub(r'\n+$', '', description)
 
 	#remove leading newlines
-	description = re.sub(r'^\n+', '', description, re.M)
+	description = re.sub(r'^\n+', '', description)
 
 	return description
 
