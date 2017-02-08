@@ -103,7 +103,8 @@ def add_label(depth, cuts, node):
 		if is_objective(node):
 			#emit the full description
 			level = 2
-			print("\n\n%s Attacker Objective Node %s" % ( ('#' * level, working_title)))
+			parsed_title = re.match(r'(\d+\..*?)\s(.*?)$',working_title).groups()
+			print("\n\n%s Attacker Objective Node %s (%s)" % ( ('#' * level, parsed_title[1], parsed_title[0])))
 			description = get_description(node)
 			print("\n%s" % description)
 			#deep copy node
