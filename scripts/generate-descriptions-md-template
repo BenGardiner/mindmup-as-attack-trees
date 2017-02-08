@@ -6,10 +6,17 @@ import html2text
 from bs4 import BeautifulSoup
 import re
 import ipdb
+import argparse
+parser = argparse.ArgumentParser()
 
 def info(type, value, tb):
 	ipdb.pm()
 #sys.excepthook = info
+
+parser.add_argument("--for-pandoc", action='store_true', help="generate markdown destined for pandoc, disables pandoc-specific markdown tricks. When not specified, the output is tailored for github.")
+parser.add_argument("input", help="the mindmup file that will be processed to create the markdown text body")
+parser.add_argument('--cuts', nargs='+', help='specify a list of nodes (by title string match) where the tree should be cut-up while rendering', required=False)
+args = parser.parse_args()
 
 text_maker = html2text.HTML2Text()
 text_maker.body_width = 0 #disable random line-wrapping from html2text
@@ -204,7 +211,7 @@ def print_other_headings(level, title, description):
 
 def add_graphic(node, title):
 	emit_tree_snapshot(title, node)
-	print("\n![*%s Attack Subtree*](%s.png){ width=100%% }" % (title, get_safe_filename(title)))
+	print("\n![*%s Attack Subtree*](%s.png)%s" % (title, get_safe_filename(title), "{ width=100% }" if args.for_pandoc else ""))
 
 def detect_html(text):
 	return bool(BeautifulSoup(text, "html.parser").find())
@@ -286,8 +293,11 @@ def do_tops():
 		do_ideas(depth, cuts, node)
 	return
 
-fd_in = open(sys.argv[1], 'r')
-cuts = sys.argv[2:]
+fd_in = open(args.input, 'r')
+cuts = args.cuts
+if cuts is None:
+	cuts = list()
+
 data = json.load(fd_in)
 fd_in.close()
 
