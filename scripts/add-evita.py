@@ -36,6 +36,15 @@ def get_raw_description(node):
 
 	return description
 
+def set_raw_description(node, new_description):
+	#prefer the mindmup 2.0 'note' to the 1.0 'attachment'
+	description = node.get('attr', dict()).get('note', dict()).get('text', '')
+	if not description is '':
+		node.get('attr').get('note').update({'text': new_description})
+	else:
+		node.get('attr', dict()).get('attachment', dict()).update({'content': new_description})
+
+
 def detect_html(text):
 	return bool(BeautifulSoup(text, "html.parser").find())
 
@@ -75,6 +84,103 @@ def parse_evita_raps(node):
 
 	return
 
+def get_evita_et_label(node):
+	et = node.get('attr').get('evita_et')
+
+	if et == 0:
+		return "0 &lt; one day"
+	elif et == 1:
+		return "1 &lt; one week"
+	elif et == 4:
+		return "4 &lt; one month"
+	elif et == 10:
+		return "10 &lt; three months"
+	elif et == 17:
+		return "17 &lt; six months"
+	elif et == 19:
+		return "19 &gt; six months"
+	elif et == float('inf'):
+		return "Not Practical"
+	else:
+		return "%d unknown" % et
+
+def get_evita_e_label(node):
+	e = node.get('attr').get('evita_e')
+
+	if e == 0:
+		return "0 Layman"
+	elif e == 3:
+		return "3 Proficient"
+	elif e == 6:
+		return "6 Expert"
+	elif e == 8:
+		return "8 Multiple Experts"
+	elif e == float('inf'):
+		return "Not Practical"
+	else:
+		return "%d unknown" % e
+
+def get_evita_k_label(node):
+	k = node.get('attr').get('evita_k')
+
+	if k == 0:
+		return "0 Public"
+	elif k == 3:
+		return "3 Restricted"
+	elif k == 7:
+		return "7 Sensitive"
+	elif k == 11:
+		return "11 Critical"
+	elif k == float('inf'):
+		return "Not Practical"
+	else:
+		return "%d unknown" % k
+
+def get_evita_wo_label(node):
+	wo = node.get('attr').get('evita_wo')
+
+	if wo == 0:
+		return "0 Unlimited"
+	elif wo == 1:
+		return "1 Easy"
+	elif wo == 4:
+		return "4 Moderate"
+	elif wo == 10:
+		return "10 Difficult"
+	elif wo == float('inf'):
+		return "None"
+	else:
+		return "%d unknown" % wo
+
+def get_evita_eq_label(node):
+	eq = node.get('attr').get('evita_eq')
+
+	if eq == 0:
+		return "0 Standard"
+	elif eq == 4:
+		return "4 Specialized"
+	elif eq == 7:
+		return "7 Bespoke"
+	elif eq == 9:
+		return "9 Multiple Bespoke"
+	elif eq == float('inf'):
+		return "Not Practical"
+	else:
+		return "%d unknown" % eq
+
+def append_evita_rap_table(node):
+	set_raw_description(node, get_raw_description(node) +
+		"<div>| Elapsed Time | Expertise | Knowledge | Window of Opportunity | Equipment |</div>" +
+		"<div>|-------------------------|-------------------------|-------------------------|-------------------------|-------------------------|</div>" +
+		"<div>| %s | %s | %s | %s | %s |</div>" % (
+			get_evita_et_label(node),
+			get_evita_e_label(node),
+			get_evita_k_label(node),
+			get_evita_wo_label(node),
+			get_evita_eq_label(node)
+		)
+	)
+
 def derive_evita_apt(node):
 	attrs = node.get('attr')
 
@@ -95,6 +201,82 @@ def derive_evita_apt(node):
 
 	attrs.update({'evita_apt': apt})
 	return
+
+def get_evita_ss_label(node):
+	ss = node.get('attr').get('evita_ss')
+
+	if ss == 0:
+		return "No injuries"
+	elif ss == 1:
+		return "Light or moderate injuries"
+	elif ss == 2:
+		return "Severe injuries (survival probable); light/moderate injuries for multiple vehicles"
+	elif ss == 3:
+		return "Life threatening (survivaluncertain) or fatal injuries; severe injuries for multiple vehicles"
+	elif ss == 4:
+		return "Life threatening or fatal in-juries for multiple vehicles"
+	else:
+		return "%d unknown" % ss
+
+def get_evita_os_label(node):
+	os = node.get('attr').get('evita_os')
+
+	if os == 0:
+		return "No impact on operational performance"
+	elif os == 1:
+		return "Impact not discernible to driver"
+	elif os == 2:
+		return "Driver aware of performance degradation; indiscernible impacts for multiple vehicles"
+	elif os == 3:
+		return "Significant impact on performance; noticeable impact for multiple vehicles"
+	elif os == 4:
+		return "Significant impact for multiple vehicles"
+	else:
+		return "%d unknown" % os
+
+def get_evita_ps_label(node):
+	ps = node.get('attr').get('evita_ps')
+
+	if ps == 0:
+		return "No unauthorized access to data"
+	elif ps == 1:
+		return "Anonymous data only (no specific driver of vehicle data)"
+	elif ps == 2:
+		return "Identification of vehicle or driver; anonymous data for multiple vehicles"
+	elif ps == 3:
+		return "Driver or vehicle tracking; identification of driver or vehicle for multiple vehicles"
+	elif ps == 4:
+		return "Driver or vehicle tracking for multiple vehicles"
+	else:
+		return "%d unknown" % ps
+
+def get_evita_fs_label(node):
+	fs = node.get('attr').get('evita_fs')
+
+	if fs == 0:
+		return "No financial loss"
+	elif fs == 1:
+		return "Low-level loss (~ 10EU)"
+	elif fs == 2:
+		return "Moderate loss (~ 100EU); low losses for multiple vehicles"
+	elif fs == 3:
+		return "Heavy loss (~ 1000EU); moderate losses for multiple vehicles"
+	elif fs == 4:
+		return "Heavy losses for multiple vehicles"
+	else:
+		return "%d unknown" % fs
+
+def append_evita_severity_table(node):
+	set_raw_description(node, get_raw_description(node) +
+		"<div>| Safety Severity | Privacy Severity | Financial Severity | Operational Severity |</div>" +
+		"<div>|-------------------------|-------------------------|-------------------------|-------------------------|</div>" +
+		"<div>| %s | %s | %s | %s |</div>" % (
+			get_evita_fs_label(node),
+			get_evita_os_label(node),
+			get_evita_ps_label(node),
+			get_evita_ss_label(node)
+		)
+	)
 
 def parse_evita_severities(node):
 	if not 'EVITA::' in get_raw_description(node):
@@ -271,6 +453,7 @@ def do_node_secondpass(node, nodes_context):
 		if is_node_a_leaf(node):
 			parse_evita_raps(node)
 			derive_evita_apt(node)
+			append_evita_rap_table(node)
 
 		else:
 			nodes_context.append(get_node_title(node))
@@ -339,6 +522,7 @@ def do_node_riskspass(node, nodes_context):
 	saved_objective = objective_node
 	if is_objective(node):
 		parse_evita_severities(node)
+		append_evita_severity_table(node)
 		objective_node = node
 
 	if is_riskpoint(node):

@@ -84,10 +84,6 @@ def is_node_weigthed(node):
 	weight = get_node_weight(node)
 	return (not weight is None) and (not math.isnan(weight)) and (not math.isinf(weight))
 
-def is_objective(node):
-	raw_description = get_raw_description(node)
-	return 'OBJECTIVE::' in raw_description
-
 def is_riskpoint(node):
 	raw_description = get_raw_description(node)
 	return 'RISK_HERE::' in raw_description
@@ -159,7 +155,7 @@ def get_probability_label(evita_probability):
 		return "unknown"
 
 def emit_riskpoint_row(riskpoint_node):
-	print("|%s|%s|%s|%s|%s|%s|" % (
+	print("| %s | %s | %s | %s | %s | %s |" % (
 		get_node_title(riskpoint_node),
 		get_risk_label(riskpoint_node.get('attr').get('evita_sr')),
 		get_risk_label(riskpoint_node.get('attr').get('evita_pr')),
@@ -169,9 +165,14 @@ def emit_riskpoint_row(riskpoint_node):
 	))
 	return
 
+def append_attackvector_row(node):
+    global attack_vector_collection
+
+    attack_vector_collection.append(node)
+
 def emit_attackvector_row(riskpoint_node, node):
-	print("|%s|%s|" % (
-		get_node_title(node),
+	print("| %s | %s |" % (
+		get_node_title(node), #TODO: make this a hyperlink to the attack vector section (when !word output)
 		get_probability_label(node.get('attr').get('evita_apt'))
 	))
 	return
@@ -197,7 +198,7 @@ def do_each_attackvector(node, nodes_context):
 		elif not is_outofscope(node):
 			if not node.get('done', None) is riskpoint_node:
 				node.update({'done': riskpoint_node})
-				emit_attackvector_row(riskpoint_node, node)
+				append_attackvector_row(node)
 
 	node.update({'inprogress': None})
 	node.update({'done': riskpoint_node})
@@ -212,17 +213,22 @@ def do_each_riskpoint(node, nodes_context):
 	global nodes_lookup
 	global objective_node
 	global riskpoint_node
+	global attack_vector_collection
 
 	if is_riskpoint(node):
-		print("\n\n|Attack Method|Safety Risk|Privacy Risk|Financial Risk|Operational Risk|Combined Attack Probability|")
-		print("|---------------|-----------|------------|--------------|----------------|---------------------------|")
+		print("\n\n| Attack Method | Safety Risk | Privacy Risk | Financial Risk | Operational Risk | Combined Attack Probability |")
+		print("|-----------------|-------------|--------------|----------------|------------------|-----------------------------|")
 		riskpoint_node = node
 		emit_riskpoint_row(riskpoint_node)
 
 		print("\n\nThe following table summarizes the attack vector nodes contributing to the risks of above attack method and their Probability (derived using the EVITA method as discussed in this document). NB: these are all of the attack vectors which contribute to the risks; however, to what degree they make a contribution is borne-out of the attack tree structure so please consult that for details of how much contribution they make individually.")
-		print("\n\n|Attack Vector|Attack Vector Probability|")
-		print("|-------------|-------------------------|")
+		print("\n\n| Attack Vector | Attack Vector Probability |")
+		print("|---------------------------------------------------------------------------------------|------------------------|")
+		attack_vector_collection = list()
 		do_each_attackvector(node, nodes_context)
+		attack_vector_collection.sort(key=lambda node: node.get('attr').get('evita_apt'), reverse=True)
+		for attack_vector in attack_vector_collection:
+		    emit_attackvector_row(riskpoint_node, attack_vector)
 		return
 
 	if not is_node_a_leaf(node):
