@@ -263,14 +263,14 @@ def do_tops():
 	while len(tops) + len(seconds) > 0:
 		if len(tops) > 0:
 			node = tops.pop(0)
-			tops_count = tops_count + 1
 		else:
 			node = seconds.pop(0)
 
 		title = node.get('title', '')
 
-		if tops_count == 1:
-			print("%s Attack Trees: Attacker Objectives" % ('#' * 1))
+		if tops_count == 0:
+			print("\n%s Attack Trees: Attacker Objectives" % ('#' * 1))
+			tops_count = tops_count + 1
 		else:
 			if not seconds_heading_done:
 				print("\n\n%s Attack Trees: Attacker Methods Etc." % ('#' * 1))
