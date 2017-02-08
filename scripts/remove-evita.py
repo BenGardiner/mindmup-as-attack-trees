@@ -6,7 +6,42 @@ import re
 def do_ideas(node):
 	for key, value in iter(sorted(node.get('ideas', dict()).iteritems())):
 		trim_attrs(value)
+		trim_tables(value)
 	return
+
+def get_raw_description(node):
+	#prefer the mindmup 2.0 'note' to the 1.0 'attachment'
+	description = node.get('attr', dict()).get('note', dict()).get('text', '')
+	if description is '':
+		description = node.get('attr', dict()).get('attachment', dict()).get('content', '')
+
+	return description
+
+def set_raw_description(node, new_description):
+	#prefer the mindmup 2.0 'note' to the 1.0 'attachment'
+	description = node.get('attr', dict()).get('note', dict()).get('text', '')
+	if not description is '':
+		node.get('attr').get('note').update({'text': new_description})
+	else:
+		node.get('attr', dict()).get('attachment', dict()).update({'content': new_description})
+
+def trim_tables(node):
+	description = get_raw_description(node)
+
+	description = re.sub(
+		re.escape("<div>| Safety Severity | Privacy Severity | Financial Severity | Operational Severity |</div>") +
+		re.escape("<div>|-------------------------|-------------------------|-------------------------|-------------------------|</div>") +
+		re.escape('<div>') + r'\| [^|]+ \| [^|]+ \| [^|]+ \| [^|]+ \|' + re.escape('</div>'),
+		'', description)
+
+	description = re.sub(
+		re.escape("<div>| Elapsed Time | Expertise | Knowledge | Window of Opportunity | Equipment |</div>") +
+		re.escape("<div>|-------------------------|-------------------------|-------------------------|-------------------------|-------------------------|</div>") +
+		re.escape('<div>') + r'\| [^|]+ \| [^|]+ \| [^|]+ \| [^|]+ \| [^|]+ \|' + re.escape('</div>'),
+		'', description)
+
+	set_raw_description(node, description)
+
 
 def trim_attrs(node):
 	do_ideas(node)
