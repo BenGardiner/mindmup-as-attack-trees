@@ -33,6 +33,22 @@ def do_ideas(depth, node):
 		add_label(depth+1, value)
 	return
 
+def get_raw_description(node):
+	#prefer the mindmup 2.0 'note' to the 1.0 'attachment'
+	description = node.get('attr', dict()).get('note', dict()).get('text', '')
+	if description is '':
+		description = node.get('attr', dict()).get('attachment', dict()).get('content', '')
+
+	return description
+
+def set_raw_description(node, new_description):
+	#prefer the mindmup 2.0 'note' to the 1.0 'attachment'
+	description = node.get('attr', dict()).get('note', dict()).get('text', '')
+	if not description is '':
+		node.get('attr').get('note').update({'text': new_description})
+	else:
+		node.get('attr', dict()).get('attachment', dict()).update({'content': new_description})
+
 def add_label(depth, node):
 	global levels_count
 	global nodes_lookup
@@ -84,6 +100,18 @@ def process_secondpass(node):
 
 	if not node.get('title', None).startswith(working_title):
 		node.update({'title': working_title})
+
+	description = get_raw_description(node)
+	matches = re.findall(r'\*[^\s*]+(?:\s+[^\s*]+)* \(\*\)\*',description)
+	for match in matches:
+	    reference = re.sub(r'\*(.*?) \(\*\)\*', r'\1', match).strip()
+	    referent_node = nodes_lookup.get(reference, None)
+	    if not referent_node is None:
+		print('resolving %s' % reference)
+		description = re.sub(r'\*(%s) \(\*\)\*' % reference, r'*\1 (%s)*' % referent_node.get('coords'), description)
+		set_raw_description(node, description)
+	    else:
+		print('warning not resolving %s' % reference)
 	return
 
 def foreach_node_thirdpass(node):
