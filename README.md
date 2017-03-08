@@ -15,6 +15,8 @@ In general:
 
 In detail:
 
+NB: the commands below haven't been updated to reflect some of the more recent changes to these scripts
+
 1. collaborate on (this was alot better before mindmup 2.0), or otherwise create an attack tree in [mindmup](https://app.mindmup.com/map/new/).
 	* It is best if this tree is stable, making large changes to it will make it hard to update the derived documents generated in later steps.
 	* There are some special strings and properties that will be recognized by the processing later:
@@ -45,3 +47,6 @@ In detail:
 
 1. publish the markdown+images.
 
+# Calculation of Combined Attack Probability and Risk
+
+By adding tags to the mindmup text you can structure the attack tree to include attacker objectives with associated severities and attack vectors with associated required attack potentials. Then the scripts will calculate and propagate the required attack potentials up the tree and marry them with the severities to estimate risks. This calculation is performed according to the method detailed in [*Security requirements for automotive on-board networks based on dark-side scenarios*](https://rieke.link/EVITAD2.3v1.1.pdf)
