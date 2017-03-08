@@ -74,6 +74,12 @@ def do_node_firstpass(node):
 	#TODO ERROR Node with labeled (Out of Scope) without EVITA:: *inf*
 
 	#TODO WARNING Node with expliciti (Out of Scope) label
+
+	#TODO ERROR OBJECTIVE Node without EVITA
+
+	#TODO ERROR EVITA:: without enough (terminated) elements of the vector (e.g. missing | terminator on last column)
+
+	#TODO ERROR no RISK_HERE:: node
 	return
 
 def get_node_referent_title(node):
