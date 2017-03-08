@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys,json
+from bs4 import BeautifulSoup
 import re
 
 def do_ideas(node):
@@ -25,19 +26,27 @@ def set_raw_description(node, new_description):
 	else:
 		node.get('attr', dict()).get('attachment', dict()).update({'content': new_description})
 
+def detect_html(text):
+	return bool(BeautifulSoup(text, "html.parser").find())
+
 def trim_tables(node):
 	description = get_raw_description(node)
 
+	html = detect_html(description)
+	bookends = ("<div>", "</div>") if html else ('\n', '')
+
 	description = re.sub(
-		re.escape("<div>| Safety Severity | Privacy Severity | Financial Severity | Operational Severity |</div>") +
-		re.escape("<div>|-------------------------|-------------------------|-------------------------|-------------------------|</div>") +
-		re.escape('<div>') + r'\| [^|]+ \| [^|]+ \| [^|]+ \| [^|]+ \|' + re.escape('</div>'),
+		re.escape("%s%s" % bookends) +
+		re.escape("%s| Safety Severity | Privacy Severity | Financial Severity | Operational Severity |%s" % bookends) +
+		re.escape("%s|-------------------------|-------------------------|-------------------------|-------------------------|%s" % bookends) +
+		re.escape(bookends[0]) + r'\| [^|]+ \| [^|]+ \| [^|]+ \| [^|]+ \|' + re.escape(bookends[1]),
 		'', description)
 
 	description = re.sub(
-		re.escape("<div>| Elapsed Time | Expertise | Knowledge | Window of Opportunity | Equipment |</div>") +
-		re.escape("<div>|-------------------------|-------------------------|-------------------------|-------------------------|-------------------------|</div>") +
-		re.escape('<div>') + r'\| [^|]+ \| [^|]+ \| [^|]+ \| [^|]+ \| [^|]+ \|' + re.escape('</div>'),
+		re.escape("%s%s" % bookends) +
+		re.escape("%s| Elapsed Time | Expertise | Knowledge | Window of Opportunity | Equipment |%s" % bookends) +
+		re.escape("%s|-------------------------|-------------------------|-------------------------|-------------------------|-------------------------|%s" % bookends) +
+		re.escape(bookends[0]) + r'\| [^|]+ \| [^|]+ \| [^|]+ \| [^|]+ \| [^|]+ \|' + re.escape(bookends[1]),
 		'', description)
 
 	set_raw_description(node, description)

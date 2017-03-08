@@ -169,10 +169,19 @@ def get_evita_eq_label(node):
 		return "%d unknown" % eq
 
 def append_evita_rap_table(node):
-	set_raw_description(node, get_raw_description(node) +
-		"<div>| Elapsed Time | Expertise | Knowledge | Window of Opportunity | Equipment |</div>" +
-		"<div>|-------------------------|-------------------------|-------------------------|-------------------------|-------------------------|</div>" +
-		"<div>| %s | %s | %s | %s | %s |</div>" % (
+	description = get_raw_description(node)
+
+	if description.endswith('|'):
+	    print("warning. node %s. don't end node description in '|''" % get_node_title(node))
+
+	html = detect_html(description)
+	bookends = ("<div>", "</div>") if html else ('\n', '')
+
+	set_raw_description(node, description +
+		"%s%s" % bookends +
+		"%s| Elapsed Time | Expertise | Knowledge | Window of Opportunity | Equipment |%s" % bookends +
+		"%s|-------------------------|-------------------------|-------------------------|-------------------------|-------------------------|%s" % bookends +
+		("%s| %%s | %%s | %%s | %%s | %%s |%s" % bookends ) % (
 			get_evita_et_label(node),
 			get_evita_e_label(node),
 			get_evita_k_label(node),
@@ -267,10 +276,19 @@ def get_evita_fs_label(node):
 		return "%d unknown" % fs
 
 def append_evita_severity_table(node):
+	description = get_raw_description(node)
+	html = detect_html(description)
+
+	if description.endswith('|'):
+	    print("warning. node %s. don't end node description in '|''" % get_node_title(node))
+
+	bookends = ("<div>", "</div>") if html else ('\n', '')
+
 	set_raw_description(node, get_raw_description(node) +
-		"<div>| Safety Severity | Privacy Severity | Financial Severity | Operational Severity |</div>" +
-		"<div>|-------------------------|-------------------------|-------------------------|-------------------------|</div>" +
-		"<div>| %s | %s | %s | %s |</div>" % (
+		"%s%s" % bookends +
+		"%s| Safety Severity | Privacy Severity | Financial Severity | Operational Severity |%s" % bookends +
+		"%s|-------------------------|-------------------------|-------------------------|-------------------------|%s" % bookends +
+		("%s| %%s | %%s | %%s | %%s |%s" % bookends ) % (
 			get_evita_fs_label(node),
 			get_evita_os_label(node),
 			get_evita_ps_label(node),
