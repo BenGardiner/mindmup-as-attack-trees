@@ -52,9 +52,6 @@ def do_node_firstpass(node):
 	if node_title == 'AND':
 		return
 
-	if node_title == '...':
-		return
-
 	if is_node_a_reference(node):
 		if not is_node_a_leaf(node):
 			print("ERROR reference node with children: %s" % node_title)

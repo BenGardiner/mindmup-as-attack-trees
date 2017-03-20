@@ -16,6 +16,7 @@ def info(type, value, tb):
 parser.add_argument("--for-pandoc", action='store_true', help="generate markdown destined for pandoc, disables pandoc-specific markdown tricks. When not specified, the output is tailored for github.")
 parser.add_argument("input", help="the mindmup file that will be processed to create the markdown text body")
 parser.add_argument('--cuts', nargs='+', help='specify a list of nodes (by title string match) where the tree should be cut-up while rendering', required=False)
+parser.add_argument("--only-objectives", action='store_true', help="only generate markdown for the attacker objectives, not the rest of the tree")
 args = parser.parse_args()
 
 text_maker = html2text.HTML2Text()
@@ -118,7 +119,8 @@ def add_label(depth, cuts, node):
 			#change node description to "This objective's severity and other details are covered in section *Attack Objective Node %s*, above. Please see that section for more details. In this section we will examine the Attacker Methods and intermediate nodes below it down to the attack vectors in detail.
 			new_node = copy.deepcopy(node)
 			update_raw_description(new_node, "This objective's severity and other details are covered in section *Attacker Objective Node %s*, above. Please see that section for more details. In this section we will examine the Attacker Methods and intermediate nodes below it down to the attack vectors in detail." % working_title)
-			seconds.append(new_node)
+			if not args.only_objectives: # don't bother descending the tree in --only-objectives
+				seconds.append(new_node)
 		else:
 			tops.append(node)
 		return

@@ -8,6 +8,13 @@ import re
 from collections import OrderedDict
 import math
 import ipdb
+import argparse
+parser = argparse.ArgumentParser()
+
+parser.add_argument("--only-severities", action='store_true', help="only generate markdown for the attacker objective severities, not the rest of the tree")
+parser.add_argument('--safety-privacy-financial-operational', action='store_true', help="use this alternate ordering for the severities")
+parser.add_argument('mupin', nargs='?', help="the mindmup file that will be processed -- transforming and augmenting the JSON")
+args = parser.parse_args()
 
 def info(type, value, tb):
 	ipdb.pm()
@@ -213,65 +220,69 @@ def derive_evita_apt(node):
 
 def get_evita_ss_label(node):
 	ss = node.get('attr').get('evita_ss')
+	ss = int(ss)
 
 	if ss == 0:
-		return "No injuries"
+		return "S%s No injuries" % ss
 	elif ss == 1:
-		return "Light or moderate injuries"
+		return "S%s Light or moderate injuries" % ss
 	elif ss == 2:
-		return "Severe injuries (survival probable); light/moderate injuries for multiple vehicles"
+		return "S%s Severe injuries (survival probable); light/moderate injuries for multiple vehicles" % ss
 	elif ss == 3:
-		return "Life threatening (survivaluncertain) or fatal injuries; severe injuries for multiple vehicles"
+		return "S%s Life threatening (survivaluncertain) or fatal injuries; severe injuries for multiple vehicles" % ss
 	elif ss == 4:
-		return "Life threatening or fatal in-juries for multiple vehicles"
+		return "S%s Life threatening or fatal in-juries for multiple vehicles" % ss
 	else:
 		return "%d unknown" % ss
 
 def get_evita_os_label(node):
 	os = node.get('attr').get('evita_os')
+	os = int(os)
 
 	if os == 0:
-		return "No impact on operational performance"
+		return "S%s No impact on operational performance" % os
 	elif os == 1:
-		return "Impact not discernible to driver"
+		return "S%s Impact not discernible to driver" % os
 	elif os == 2:
-		return "Driver aware of performance degradation; indiscernible impacts for multiple vehicles"
+		return "S%s Driver aware of performance degradation; indiscernible impacts for multiple vehicles" % os
 	elif os == 3:
-		return "Significant impact on performance; noticeable impact for multiple vehicles"
+		return "S%s Significant impact on performance; noticeable impact for multiple vehicles" % os
 	elif os == 4:
-		return "Significant impact for multiple vehicles"
+		return "S%s Significant impact for multiple vehicles" % os
 	else:
 		return "%d unknown" % os
 
 def get_evita_ps_label(node):
 	ps = node.get('attr').get('evita_ps')
+	ps = int(ps)
 
 	if ps == 0:
-		return "No unauthorized access to data"
+		return "S%s No unauthorized access to data" % ps
 	elif ps == 1:
-		return "Anonymous data only (no specific driver of vehicle data)"
+		return "S%s Anonymous data only (no specific driver of vehicle data)" % ps
 	elif ps == 2:
-		return "Identification of vehicle or driver; anonymous data for multiple vehicles"
+		return "S%s Identification of vehicle or driver; anonymous data for multiple vehicles" % ps
 	elif ps == 3:
-		return "Driver or vehicle tracking; identification of driver or vehicle for multiple vehicles"
+		return "S%s Driver or vehicle tracking; identification of driver or vehicle for multiple vehicles" % ps
 	elif ps == 4:
-		return "Driver or vehicle tracking for multiple vehicles"
+		return "S%s Driver or vehicle tracking for multiple vehicles" % ps
 	else:
 		return "%d unknown" % ps
 
 def get_evita_fs_label(node):
 	fs = node.get('attr').get('evita_fs')
+	fs = int(fs)
 
 	if fs == 0:
-		return "No financial loss"
+		return "S%s No financial loss" % fs
 	elif fs == 1:
-		return "Low-level loss (~ 10EU)"
+		return "S%s Low-level loss (~ 10EU)" % fs
 	elif fs == 2:
-		return "Moderate loss (~ 100EU); low losses for multiple vehicles"
+		return "S%s Moderate loss (~ 100EU); low losses for multiple vehicles" % fs
 	elif fs == 3:
-		return "Heavy loss (~ 1000EU); moderate losses for multiple vehicles"
+		return "S%s Heavy loss (~ 1000EU); moderate losses for multiple vehicles" % fs
 	elif fs == 4:
-		return "Heavy losses for multiple vehicles"
+		return "S%s Heavy losses for multiple vehicles" % fs
 	else:
 		return "%d unknown" % fs
 
@@ -307,10 +318,16 @@ def parse_evita_severities(node):
 		evita_line = line.strip().split('|')
 		attr = node.get('attr')
 
-		attr.update({'evita_fs': clamp_to_json_values(float(evita_line[1]))})
-		attr.update({'evita_os': clamp_to_json_values(float(evita_line[2]))})
-		attr.update({'evita_ps': clamp_to_json_values(float(evita_line[3]))})
-		attr.update({'evita_ss': clamp_to_json_values(float(evita_line[4]))})
+		if args.safety_privacy_financial_operational:
+		    attr.update({'evita_ss': clamp_to_json_values(float(evita_line[1]))})
+		    attr.update({'evita_ps': clamp_to_json_values(float(evita_line[2]))})
+		    attr.update({'evita_fs': clamp_to_json_values(float(evita_line[3]))})
+		    attr.update({'evita_os': clamp_to_json_values(float(evita_line[4]))})
+		else:
+		    attr.update({'evita_fs': clamp_to_json_values(float(evita_line[1]))})
+		    attr.update({'evita_os': clamp_to_json_values(float(evita_line[2]))})
+		    attr.update({'evita_ps': clamp_to_json_values(float(evita_line[3]))})
+		    attr.update({'evita_ss': clamp_to_json_values(float(evita_line[4]))})
 
 	return
 
@@ -528,6 +545,19 @@ def do_node_thirdpass(node, nodes_context):
 
 	return
 
+def do_children_severitiespass(node, nodes_context):
+	for child in get_node_children(node):
+		do_node_severitiespass(child, nodes_context)
+	return
+
+def do_node_severitiespass(node, nodes_context):
+	if is_objective(node):
+		parse_evita_severities(node)
+		append_evita_severity_table(node)
+
+	do_children_severitiespass(node, nodes_context)
+	return
+
 def do_children_riskspass(node, nodes_context):
 	for child in get_node_children(node):
 		do_node_riskspass(child, nodes_context)
@@ -539,8 +569,6 @@ def do_node_riskspass(node, nodes_context):
 
 	saved_objective = objective_node
 	if is_objective(node):
-		parse_evita_severities(node)
-		append_evita_severity_table(node)
 		objective_node = node
 
 	if is_riskpoint(node):
@@ -551,18 +579,18 @@ def do_node_riskspass(node, nodes_context):
 	do_children_riskspass(node, nodes_context)
 	objective_node = saved_objective
 
-if len(sys.argv) < 2:
+if args.mupin is None:
 	fd_in=sys.stdin
 else:
-	fd_in=open(sys.argv[1], 'r')
+	fd_in=open(args.mupin, 'r')
 
 data = json.load(fd_in)
 
-if len(sys.argv) < 2:
+if args.mupin is None:
 	fd_out = sys.stdout
 else:
 	fd_in.close()
-	fd_out=open(sys.argv[1],'w')
+	fd_out=open(args.mupin,'w')
 
 nodes_context=list()
 
@@ -573,10 +601,12 @@ else:
 	root_node = data
 
 do_children_firstpass(root_node)
-do_node_secondpass(root_node, nodes_context)
-do_fixups(nodes_context)
-do_node_thirdpass(root_node, nodes_context)
-do_node_riskspass(root_node, nodes_context)
+do_node_severitiespass(root_node, nodes_context)
+if not args.only_severities:
+    do_node_secondpass(root_node, nodes_context)
+    do_fixups(nodes_context)
+    do_node_thirdpass(root_node, nodes_context)
+    do_node_riskspass(root_node, nodes_context)
 
 str = json.dumps(data, indent=2, sort_keys=True)
 str = re.sub(r'\s+$', '', str, 0, re.M)
