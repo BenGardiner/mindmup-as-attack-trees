@@ -1,5 +1,10 @@
 from collections import OrderedDict
+import html2text
+from bs4 import BeautifulSoup
 import re
+
+text_maker = html2text.HTML2Text()
+text_maker.body_width = 0 #disable random line-wrapping from html2text
 
 def get_node_children(node):
 	return OrderedDict(sorted(node.get('ideas', dict()).iteritems(), key=lambda t: float(t[0]))).values()
@@ -11,7 +16,26 @@ def get_node_title(node):
 	return node.get('title', '')
 
 def is_mitigation(node):
-	return is_node_a_leaf(node) and get_node_title(node).startswith('Mitigation:')
+	return is_node_a_leaf(node) and ( 'Mitigation: ' in get_node_title(node) )
+
+def is_subtree(node):
+	raw_description = get_raw_description(node)
+	return 'SUBTREE::' in raw_description
+
+def is_objective(node):
+	raw_description = get_raw_description(node)
+	return 'OBJECTIVE::' in raw_description
+
+def is_riskpoint(node):
+	raw_description = get_raw_description(node)
+	return 'RISK_HERE::' in raw_description
+
+def is_outofscope(node):
+	raw_description = get_raw_description(node)
+	return ( "out of scope".lower() in raw_description.lower() ) or ( 'OUT_OF_SCOPE::' in raw_description )
+
+def is_collapsed(node):
+	return node.get('attr', dict()).get('collapsed', False)
 
 def is_all_children(node, predicate):
 	for child in get_node_children(node):
@@ -29,11 +53,55 @@ def is_objective(node):
 	raw_description = get_raw_description(node)
 	return 'OBJECTIVE::' in raw_description
 
+def detect_html(text):
+	return bool(BeautifulSoup(text, "html.parser").find())
+
 def get_raw_description(node):
 	#prefer the mindmup 2.0 'note' to the 1.0 'attachment'
 	description = node.get('attr', dict()).get('note', dict()).get('text', '')
 	if description is '':
 		description = node.get('attr', dict()).get('attachment', dict()).get('content', '')
+
+	return description
+
+def update_raw_description(node, new_description):
+	#prefer the mindmup 2.0 'note' to the 1.0 'attachment'
+	description = node.get('attr', dict()).get('note', dict()).get('text', '')
+	if not description is '':
+		node.get('attr').get('note').update({'text': new_description})
+	else:
+		node.get('attr', dict()).get('attachment', dict()).update({'content': new_description})
+
+def get_unclean_description(node):
+	global text_maker
+
+	description = get_raw_description(node) + '\n'
+
+	#TODO: convert special characters e.g. %lt => <
+	if detect_html(description):
+		description = text_maker.handle(description)
+
+	return description
+
+def get_description(node):
+	description = get_unclean_description(node)
+
+	#remove line breaks between '|' -- to preserve tables in 1.0 mindmups (that end up in multiple <div>)
+	description = re.sub(r'\|\n+\|', '|\n|', description, re.M)
+
+	#remove special tags (e.g. SUBTREE:: OBJECTIVE:: EVITA::)
+	description = description.replace('SUBTREE::', '').replace('OBJECTIVE::','').replace('RISK_HERE::', '')
+
+	description = re.sub(r'\nEVITA::.*\n', '\n\n', description, re.M)
+
+	#remove trailing whitespace
+	description = re.sub(r'\s+$', '\n', description, flags=re.M)
+
+	#remove trailing newlines
+	description = re.sub(r'\n+$', '', description)
+
+	#remove leading newlines
+	description = re.sub(r'^\n+', '', description)
 
 	return description
 

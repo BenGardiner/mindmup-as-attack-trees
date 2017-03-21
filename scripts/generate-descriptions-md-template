@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from mindmup_as_attack_trees import *
 import sys,json
 import copy
 import html2text
@@ -70,7 +71,7 @@ def emit_tree_snapshot(title, node):
 
 def do_ideas(depth, cuts, node):
 	count = 1
-	for key, value in iter(sorted(node.get('ideas', dict()).iteritems(), key=lambda (k,v): (float(k),v) )):
+	for value in get_node_children(node):
 		add_label(depth+1, cuts, value)
 		count = count+1
 	return
@@ -87,23 +88,6 @@ def is_cut(node, cuts):
 			return True
 	
 	return is_objective(node) or is_subtree(node)
-
-def is_subtree(node):
-	raw_description = get_raw_description(node)
-	return 'SUBTREE::' in raw_description
-
-def is_objective(node):
-	raw_description = get_raw_description(node)
-	return 'OBJECTIVE::' in raw_description
-
-def is_riskpoint(node):
-	raw_description = get_raw_description(node)
-	return 'RISK_HERE::' in raw_description
-
-def is_node_a_reference(node):
-	title = node.get('title', '')
-
-	return (not title.find('(*)') == -1) or (not re.search(r'\(\d+\..*?\)', title) is None)
 
 def add_label(depth, cuts, node):
 	global tops
@@ -143,16 +127,15 @@ def add_label(depth, cuts, node):
 
 	description = get_description(node)
 
-	if len(node.get('ideas', dict())) > 0:
+	if is_attack_vector(node):
+		print_title_headings_for_attack_vector_node(level, working_title)
+		print_other_headings(level, working_title, description)
+	else:
 		if len(description.strip()) > 0:
 			print_title_headings_for_intermediate_node(level, working_title)
 			print("\n%s" % description)
-	else:
-		print_title_headings_for_attack_vector_node(level, working_title)
-		print_other_headings(level, working_title, description)
 
-	collapsed = node.get('attr', dict()).get('collapsed', False)
-	if not collapsed:
+	if (not is_collapsed(node)) and (not is_attack_vector(node)):
 		do_ideas(depth, cuts, node)
 	return
 
@@ -164,7 +147,6 @@ def print_title_headings_for_intermediate_node(level,title):
 
 def print_title_headings_for_attack_vector_node(level,title):
 	print("\n\n%s Attack Vector Node %s" % ('#' * (level), title ))
-
 
 def print_other_headings(level, title, description):
 	global evita_tags
@@ -235,51 +217,6 @@ def print_other_headings(level, title, description):
 def add_graphic(node, title):
 	emit_tree_snapshot(title, node)
 	print("\n![*%s Attack Subtree*](%s.png)%s" % (title, get_safe_filename(title), "{ width=100% }" if args.for_pandoc else ""))
-
-def detect_html(text):
-	return bool(BeautifulSoup(text, "html.parser").find())
-
-def get_raw_description(node):
-	#prefer the mindmup 2.0 'note' to the 1.0 'attachment'
-	description = node.get('attr', dict()).get('note', dict()).get('text', '')
-	if description is '':
-		description = node.get('attr', dict()).get('attachment', dict()).get('content', '')
-
-	return description
-
-def update_raw_description(node, description):
-	if not node.get('attr', dict()).get('attachment', dict()).get('content', None) is None:
-		node.get('attr', dict()).get('attachment', dict()).update({'content': description})
-	else:
-		node.get('attr', dict()).get('note', dict()).update({'text': description})
-
-def get_description(node):
-	global text_maker
-
-	description = get_raw_description(node) + '\n'
-
-	#TODO: convert special characters e.g. %lt => <
-	if detect_html(description):
-		description = text_maker.handle(description)
-
-	#remove line breaks between '|' -- to preserve tables in 1.0 mindmups (that end up in multiple <div>)
-	description = re.sub(r'\|\n+\|', '|\n|', description, re.M)
-
-	#remove special tags (e.g. SUBTREE:: OBJECTIVE:: EVITA::)
-	description = description.replace('SUBTREE::', '').replace('OBJECTIVE::','').replace('RISK_HERE::', '')
-
-	description = re.sub(r'\nEVITA::.*\n', '\n\n', description, re.M)
-
-	#remove trailing whitespace
-	description = re.sub(r'\s+$', '\n', description, flags=re.M)
-
-	#remove trailing newlines
-	description = re.sub(r'\n+$', '', description)
-
-	#remove leading newlines
-	description = re.sub(r'^\n+', '', description)
-
-	return description
 
 def do_tops():
 	global tops

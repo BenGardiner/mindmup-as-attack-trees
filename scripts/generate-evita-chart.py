@@ -1,40 +1,23 @@
 #!/usr/bin/env python
 from __future__ import print_function
+from mindmup_as_attack_trees import *
 
 import sys,json
 import re
 from collections import OrderedDict
 import math
 import copy
+
 import ipdb
-
 def info(type, value, tb):
-    ipdb.pm()
+	ipdb.pm()
 
-#sys.excepthook = info
+sys.excepthook = info
 
 levels_count = dict()
 nodes_lookup = dict()
 
 objectives = list()
-
-def get_node_children(node):
-	return OrderedDict(sorted(node.get('ideas', dict()).iteritems(), key=lambda t: float(t[0]))).values()
-
-def is_node_a_leaf(node):
-	return len(get_node_children(node)) == 0
-
-def is_objective(node):
-	raw_description = get_raw_description(node)
-	return 'OBJECTIVE::' in raw_description
-
-def get_raw_description(node):
-	#prefer the mindmup 2.0 'note' to the 1.0 'attachment'
-	description = node.get('attr', dict()).get('note', dict()).get('text', '')
-	if description is '':
-		description = node.get('attr', dict()).get('attachment', dict()).get('content', '')
-
-	return description
 
 def do_children_firstpass(node):
 	for child in get_node_children(node):
@@ -66,31 +49,9 @@ def do_node_firstpass(node):
 
 	return
 
-def get_node_referent_title(node):
-	title = node.get('title', '')
-
-	if '(*)' in node.get('title'):
-		wip_referent_title = title.replace('(*)','').strip()
-	else:
-		referent_coords = re.search(r'\((\d+\..*?)\)', title).groups()[0]
-		wip_referent_title = "%s %s" % (referent_coords, re.sub(r'\(\d+\..*?\)', '', title).strip())
-	return wip_referent_title
-
-def is_node_a_reference(node):
-	title = node.get('title', '')
-	return (not title.find('(*)') == -1) or (not re.search(r'\(\d+\..*?\)', title) is None)
-
 def is_node_weigthed(node):
 	weight = get_node_weight(node)
 	return (not weight is None) and (not math.isnan(weight)) and (not math.isinf(weight))
-
-def is_riskpoint(node):
-	raw_description = get_raw_description(node)
-	return 'RISK_HERE::' in raw_description
-
-def is_outofscope(node):
-	raw_description = get_raw_description(node)
-	return "out of scope".lower() in raw_description.lower()
 
 def pos_infs_of_children(node):
 	for child in get_node_children(node):
@@ -101,19 +62,6 @@ def neg_infs_of_children(node):
 	for child in get_node_children(node):
 		if get_node_weight(child) == float('inf'):
 			update_node_weight(child, float('-inf'))
-
-def get_node_referent(node, nodes_lookup):
-	node_referent_title = get_node_referent_title(node)
-	node_referent = nodes_lookup.get(node_referent_title, None)
-
-	if node_referent is None:
-		print("ERROR missing node referent: %s" % node_referent_title)
-		return node
-	else:
-		return node_referent
-
-def get_node_title(node):
-	return node.get('title', '')
 
 def do_children_each_attackvector(node, nodes_context):
 	for child in get_node_children(node):
@@ -137,7 +85,6 @@ def get_risk_label(evita_risk):
 	elif evita_risk == 6:
 		return "R6"
 	else:
-		ipdb.set_trace()
 		return "unknown"
 
 def get_probability_label(evita_probability):
@@ -195,7 +142,7 @@ def do_each_attackvector(node, nodes_context):
 	else:
 		if not is_node_a_leaf(node):
 			do_children_each_attackvector(node, nodes_context)
-		elif not is_outofscope(node):
+		elif is_attack_vector(node) and not is_outofscope(node):
 			if not node.get('done', None) is riskpoint_node:
 				node.update({'done': riskpoint_node})
 				append_attackvector_row(node)
@@ -263,3 +210,6 @@ for objective in objectives:
 	print("\nIn this section we will summarize the risks of all the attack methods of the objective *%s* and the attack vectors contributing to those risks (derived using the EVITA method as discussed in this document). NB: some attack methods may be the same node as the attack objective in what follows." % get_node_title(objective_node))
 	do_each_riskpoint(objective, nodes_context)
 
+print("\n\n# EVITA Risk Analysis: Security Requirements")
+print("\nIn this section we will list, in priority order, all the mitigations against the attack vectors identified in the analysis. The priority order is defined by sorting first by Risk, then by *Combined Attack Probability*")
+#TODO

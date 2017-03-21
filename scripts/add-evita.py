@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 from __future__ import print_function
+from mindmup_as_attack_trees import *
 
 import sys,json
-import html2text
-from bs4 import BeautifulSoup
 import re
 from collections import OrderedDict
 import math
-import ipdb
 import argparse
 parser = argparse.ArgumentParser()
 
@@ -16,63 +14,26 @@ parser.add_argument('--safety-privacy-financial-operational', action='store_true
 parser.add_argument('mupin', nargs='?', help="the mindmup file that will be processed -- transforming and augmenting the JSON")
 args = parser.parse_args()
 
+import ipdb
 def info(type, value, tb):
 	ipdb.pm()
 
 sys.excepthook = info
-
-text_maker = html2text.HTML2Text()
-text_maker.body_width = 0 #disable random line-wrapping from html2text
 
 levels_count = dict()
 nodes_lookup = dict()
 fixups_queue = list()
 objective_node = None
 
-def get_node_children(node):
-	return OrderedDict(sorted(node.get('ideas', dict()).iteritems(), key=lambda t: float(t[0]))).values()
-
-def is_node_a_leaf(node):
-	return len(get_node_children(node)) == 0
-
-def get_raw_description(node):
-	#prefer the mindmup 2.0 'note' to the 1.0 'attachment'
-	description = node.get('attr', dict()).get('note', dict()).get('text', '')
-	if description is '':
-		description = node.get('attr', dict()).get('attachment', dict()).get('content', '')
-
-	return description
-
-def set_raw_description(node, new_description):
-	#prefer the mindmup 2.0 'note' to the 1.0 'attachment'
-	description = node.get('attr', dict()).get('note', dict()).get('text', '')
-	if not description is '':
-		node.get('attr').get('note').update({'text': new_description})
-	else:
-		node.get('attr', dict()).get('attachment', dict()).update({'content': new_description})
-
-
-def detect_html(text):
-	return bool(BeautifulSoup(text, "html.parser").find())
-
-def get_description(node):
-	global text_maker
-
-	description = get_raw_description(node)
-
-	if detect_html(description):
-		description = text_maker.handle(description)
-
-	return description
 
 def clamp_to_json_values(val):
     return max(-1 * sys.float_info.max, min(val, sys.float_info.max))
 
 def parse_evita_raps(node):
 	if not 'EVITA::' in get_raw_description(node):
-		raise ValueError("couldn't find EVITA:: tag in leaf node", node)
+		raise ValueError("couldn't find EVITA:: tag in attack vector node", node)
 
-	for line in get_description(node).splitlines():
+	for line in get_unclean_description(node).splitlines():
 		if not 'EVITA::' in line:
 			continue
 
@@ -184,7 +145,7 @@ def append_evita_rap_table(node):
 	html = detect_html(description)
 	bookends = ("<div>", "</div>") if html else ('\n', '')
 
-	set_raw_description(node, description +
+	update_raw_description(node, description +
 		"%s%s" % bookends +
 		"%s| Elapsed Time | Expertise | Knowledge | Window of Opportunity | Equipment |%s" % bookends +
 		"%s|-------------------------|-------------------------|-------------------------|-------------------------|-------------------------|%s" % bookends +
@@ -295,7 +256,7 @@ def append_evita_severity_table(node):
 
 	bookends = ("<div>", "</div>") if html else ('\n', '')
 
-	set_raw_description(node, get_raw_description(node) +
+	update_raw_description(node, get_raw_description(node) +
 		"%s%s" % bookends +
 		"%s| Safety Severity | Privacy Severity | Financial Severity | Operational Severity |%s" % bookends +
 		"%s|-------------------------|-------------------------|-------------------------|-------------------------|%s" % bookends +
@@ -309,9 +270,9 @@ def append_evita_severity_table(node):
 
 def parse_evita_severities(node):
 	if not 'EVITA::' in get_raw_description(node):
-		raise ValueError("couldn't find EVITA:: tag in leaf node", node)
+		raise ValueError("couldn't find EVITA:: tag in attack vector node", node)
 
-	for line in get_description(node).splitlines():
+	for line in get_unclean_description(node).splitlines():
 		if not 'EVITA::' in line:
 			continue
 
@@ -338,6 +299,7 @@ evita_security_risk_table=[
 	[1,2,3,4,5],
 	[2,3,4,5,6]
 ]
+
 def get_evita_security_risk_level(non_safety_severity, combined_attack_probability):
 	global evita_security_risk_table
 
@@ -354,14 +316,6 @@ def derive_evita_risks(this_node, objective_node):
 	these_attrs.update({'evita_pr': get_evita_security_risk_level(objective_attrs.get('evita_ps'), these_attrs.get('evita_apt'))})
 	these_attrs.update({'evita_sr': get_evita_security_risk_level(objective_attrs.get('evita_ss'), these_attrs.get('evita_apt'))})
 	return
-
-def is_objective(node):
-	raw_description = get_raw_description(node)
-	return 'OBJECTIVE::' in raw_description
-
-def is_riskpoint(node):
-	raw_description = get_raw_description(node)
-	return 'RISK_HERE::' in raw_description
 
 def do_children_firstpass(node):
 	for child in get_node_children(node):
@@ -443,19 +397,6 @@ def get_min_apt_of_children(node):
 def get_node_apt(node):
 	return node.get('attr', dict()).get('evita_apt', None)
 
-def get_node_referent(node, nodes_lookup):
-	node_referent_title = get_node_referent_title(node)
-	node_referent = nodes_lookup.get(node_referent_title, None)
-
-	if node_referent is None:
-		raise ValueError("ERROR missing node referent: %s" % node_referent_title)
-		return node
-	else:
-		return node_referent
-
-def get_node_title(node):
-	return node.get('title', '')
-
 def do_children_secondpass(node, nodes_context):
 	for child in get_node_children(node):
 		do_node_secondpass(child, nodes_context)
@@ -485,7 +426,7 @@ def do_node_secondpass(node, nodes_context):
 
 			update_node_apt(node,get_node_apt(node_referent))
 	else:
-		if is_node_a_leaf(node):
+		if is_attack_vector(node):
 			parse_evita_raps(node)
 			derive_evita_apt(node)
 			append_evita_rap_table(node)
@@ -531,7 +472,7 @@ def do_node_thirdpass(node, nodes_context):
 	global nodes_lookup
 	global fixups_queue
 
-	if not is_node_a_leaf(node):
+	if not is_attack_vector(node):
 		nodes_context.append(get_node_title(node))
 		do_children_thirdpass(node, nodes_context)
 		nodes_context.pop()
