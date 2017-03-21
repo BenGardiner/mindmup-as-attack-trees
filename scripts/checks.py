@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
-
+from mindmup_as_attack_trees import *
 import sys,json
 import re
 from collections import OrderedDict
@@ -15,24 +15,6 @@ def info(type, value, tb):
 levels_count = dict()
 nodes_lookup = dict()
 fixups_queue = list()
-
-def get_node_children(node):
-	return OrderedDict(sorted(node.get('ideas', dict()).iteritems(), key=lambda t: float(t[0]))).values()
-
-def is_node_a_leaf(node):
-	return len(get_node_children(node)) == 0
-
-def is_objective(node):
-	raw_description = get_raw_description(node)
-	return 'OBJECTIVE::' in raw_description
-
-def get_raw_description(node):
-	#prefer the mindmup 2.0 'note' to the 1.0 'attachment'
-	description = node.get('attr', dict()).get('note', dict()).get('text', '')
-	if description is '':
-		description = node.get('attr', dict()).get('attachment', dict()).get('content', '')
-
-	return description
 
 def do_children_firstpass(node):
 	for child in get_node_children(node):
@@ -62,8 +44,8 @@ def do_node_firstpass(node):
 	else:
 		print("ERROR duplicate node found: %s" % node_title)
 
-	if (not is_node_a_reference(node)) and is_node_a_leaf(node) and get_raw_description(node).find('EVITA::') == -1:
-		print("ERROR leaf node w/o (complete) description text: %s" % node_title)
+	if (not is_node_a_reference(node)) and is_attack_vector(node) and get_raw_description(node).find('EVITA::') == -1:
+		print("ERROR attack vector node w/o (complete) description text: %s" % node_title)
 
 	if is_objective(node) and get_raw_description(node).find('EVITA::') == -1:
 		print("ERROR Objective node w/o EVITA:: marker: %s" % node_title)
@@ -78,21 +60,6 @@ def do_node_firstpass(node):
 
 	#TODO ERROR no RISK_HERE:: node
 	return
-
-def get_node_referent_title(node):
-	title = node.get('title', '')
-
-	if '(*)' in node.get('title'):
-		wip_referent_title = title.replace('(*)','').strip()
-	else:
-		referent_coords = re.search(r'\((\d+\..*?)\)', title).groups()[0]
-		wip_referent_title = "%s %s" % (referent_coords, re.sub(r'\(\d+\..*?\)', '', title).strip())
-	return wip_referent_title
-
-def is_node_a_reference(node):
-	title = node.get('title', '')
-
-	return (not title.find('(*)') == -1) or (not re.search(r'\(\d+\..*?\)', title) is None)
 
 def is_node_weigthed(node):
 	weight = get_node_weight(node)
@@ -133,19 +100,6 @@ def get_min_weight_of_children(node):
 def get_node_weight(node):
 	return node.get('attr', dict()).get('weight', None)
 
-def get_node_referent(node, nodes_lookup):
-	node_referent_title = get_node_referent_title(node)
-	node_referent = nodes_lookup.get(node_referent_title, None)
-
-	if node_referent is None:
-		print("ERROR missing node referent: %s" % node_referent_title)
-		return node
-	else:
-		return node_referent
-
-def get_node_title(node):
-	return node.get('title', '')
-
 def do_children_secondpass(node, nodes_context):
 	for child in get_node_children(node):
 		do_node_secondpass(child, nodes_context)
@@ -175,7 +129,7 @@ def do_node_secondpass(node, nodes_context):
 
 			update_node_weight(node,get_node_weight(node_referent))
 	else:
-		if is_node_a_leaf(node):
+		if is_attack_vector(node):
 			update_node_weight(node, 0)
 		else:
 			nodes_context.append(get_node_title(node))
@@ -222,7 +176,7 @@ def do_children_checkinfs(node, nodes_context):
 	return
 
 def do_node_checkinfs(node, nodes_context):
-	if not is_node_a_leaf(node):
+	if not is_attack_vector(node):
 	    nodes_context.append(get_node_title(node))
 	    do_children_checkinfs(node, nodes_context)
 	    nodes_context.pop()
