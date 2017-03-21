@@ -17,6 +17,9 @@ parser.add_argument("--for-pandoc", action='store_true', help="generate markdown
 parser.add_argument("input", help="the mindmup file that will be processed to create the markdown text body")
 parser.add_argument('--cuts', nargs='+', help='specify a list of nodes (by title string match) where the tree should be cut-up while rendering', required=False)
 parser.add_argument("--only-objectives", action='store_true', help="only generate markdown for the attacker objectives, not the rest of the tree")
+parser.add_argument("--no-attack-classification", action='store_true', help="don't emit the sometimes noisy 'attack classification' sections for the attack vectors")
+parser.add_argument("--auto-attack-threat", action='store_true', help="create attack threat summaries automatically based on the attacker objective nodes and ignore the text in the node bodies")
+parser.add_argument("--mitigations-as-nodes", action='store_true', help="mitigations are separate nodes in this attack tree, search for them and collate them to create the sections for the report")
 args = parser.parse_args()
 
 text_maker = html2text.HTML2Text()
@@ -172,6 +175,7 @@ def print_other_headings(level, title, description):
 	threat_heading_found=False
 	mitigation_heading_found=False
 	previous_blank=False
+	suppress_this_subsection=False
 
 	if "out of scope".lower() in description.lower():
 		#don't emit the 'missing' sections for out of scope nodes
@@ -183,16 +187,29 @@ def print_other_headings(level, title, description):
 		if "# Attack Classification".lower() in description_line.lower() or description_line.strip().lower().endswith("Attack Classification:".lower()):
 			classification_heading_found=True
 			previous_blank=True
-			print("\n%s Attack Classification" % ('#' * (level+1)))
+			suppress_this_subsection=False
+			if not args.no_attack_classification:
+				print("\n%s Attack Classification" % ('#' * (level+1)))
+			else:
+				suppress_this_subsection=True
 		elif "# Attack Threat".lower() in description_line.lower() or description_line.strip().lower().endswith("Attack Threat:".lower()):
 			threat_heading_found=True
 			previous_blank=True
-			print("\n%s Attack Threat" % ('#' * (level+1)))
+			suppress_this_subsection=False
+			if not args.auto_attack_threat:
+				print("\n%s Attack Threat" % ('#' * (level+1)))
+			else:
+				suppress_this_subsection=True
 		elif "# Mitigation Required".lower() in description_line.lower() or description_line.strip().lower().replace("mitigations","mitigation").endswith("Mitigation Required:".lower()):
 			mitigation_heading_found=True
 			previous_blank=True
-			print("\n%s Mitigation Required" % ('#' * (level+1)))
+			suppress_this_subsection=False
+			if not args.mitigations_as_nodes:
+				print("\n%s Mitigation Required" % ('#' * (level+1)))
+			else:
+				suppress_this_subsection=True
 		elif description_line.strip().lower().endswith("Description:".lower()):
+			suppress_this_subsection=False
 			continue # skip Description: lines, all lines are emitted under a 'Attack Description' heading
 		elif description_line.strip() == "":
 			if not previous_blank:
@@ -200,16 +217,20 @@ def print_other_headings(level, title, description):
 				previous_blank=True
 			continue # skip blank lines
 		else:
-			print(description_line)
-			previous_blank=False
+			if not suppress_this_subsection:
+				print(description_line)
+				previous_blank=False
 
-	
-	if not classification_heading_found:
+	if not classification_heading_found and not args.no_attack_classification:
 		print("\n%s Attack Classification" % ('#' * (level+1)))
-	if not threat_heading_found:
-		print("\n%s Attack Threat" % ('#' * (level+1)))
-	if not mitigation_heading_found:
-		print("\n%s Mitigation Required" % ('#' * (level+1)))
+	if args.auto_attack_threat:
+		#TODO
+		#print("\n%s Attack Threat" % ('#' * (level+1)))
+		print
+	if args.mitigations_as_nodes:
+		#TODO
+		#print("\n%s Mitigation Required" % ('#' * (level+1)))
+		print
 
 def add_graphic(node, title):
 	emit_tree_snapshot(title, node)
