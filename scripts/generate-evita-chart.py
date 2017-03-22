@@ -63,11 +63,6 @@ def neg_infs_of_children(node):
 		if get_node_weight(child) == float('inf'):
 			update_node_weight(child, float('-inf'))
 
-def do_children_each_attackvector(node, nodes_context):
-	for child in get_node_children(node):
-		do_each_attackvector(child, nodes_context)
-	return
-
 def get_risk_label(evita_risk):
 	evita_risk = int(evita_risk)
 	if evita_risk == 0:
@@ -112,11 +107,6 @@ def emit_riskpoint_row(riskpoint_node):
 	))
 	return
 
-def append_attackvector_row(node):
-    global attack_vector_collection
-
-    attack_vector_collection.append(node)
-
 def emit_attackvector_row(riskpoint_node, node):
 	print("| %s | %s |" % (
 		get_node_title(node), #TODO: make this a hyperlink to the attack vector section (when !word output)
@@ -124,12 +114,11 @@ def emit_attackvector_row(riskpoint_node, node):
 	))
 	return
 
-def do_each_attackvector(node, nodes_context):
+def do_each_once_with_deref(node, parent, fn):
 	global nodes_lookup
-	global objective_node
 	global riskpoint_node
 
-	if node.get('done', None) is riskpoint_node:
+	if node.get('done', False):
 		return
 
 	node.update({'inprogress': True})
@@ -137,18 +126,63 @@ def do_each_attackvector(node, nodes_context):
 	if is_node_a_reference(node):
 		node_referent = get_node_referent(node, nodes_lookup)
 
-		if node_referent.get('inprogress', None) is None:
-			do_each_attackvector(node_referent, nodes_context)
+		if not node_referent.get('inprogress', False):
+			do_each_once_with_deref(node_referent, parent, fn)
 	else:
 		if not is_node_a_leaf(node):
-			do_children_each_attackvector(node, nodes_context)
-		elif is_attack_vector(node) and not is_outofscope(node):
-			if not node.get('done', None) is riskpoint_node:
-				node.update({'done': riskpoint_node})
-				append_attackvector_row(node)
+			for child in get_node_children(node):
+				do_each_once_with_deref(child, node, fn)
 
-	node.update({'inprogress': None})
-	node.update({'done': riskpoint_node})
+		if not node.get('done', False):
+			node.update({'done': True})
+			fn(node, parent)
+
+	node.update({'inprogress': False})
+	return
+
+def clear_once_with_deref(node):
+	for child in get_node_children(node):
+		clear_once_with_deref(child)
+
+	node.update({'inprogress': False})
+	node.update({'done': False})
+	return
+
+def do_each_attackvector(node,nodes_context):
+	def collect_attack_vectors(node, parent):
+		global attack_vector_collection
+
+		if is_attack_vector(node) and (not is_outofscope(node)):
+			attack_vector_collection.append(node)
+
+		return
+
+	collect_attack_vectors(node, None)
+
+	do_each_once_with_deref(node, None, collect_attack_vectors)
+	return
+
+def do_each_mitigation(node):
+	def collect_mitigations(node, parent):
+		global mitigation_collection
+		global riskpoint_node
+
+		if not is_mitigation(node):
+		    return
+
+		target_node = node
+		if is_node_a_reference(target_node):
+		    target_node = get_node_referent(target_node)
+		mitigation_title = get_node_title(target_node)
+
+		#TODO
+		if mitigation_collection.get(mitigation_title, None) is None:
+		    mitigation_collection.update({ mitigation_title: dict() })
+
+		mitigation_collection.get(mitigation_title).update({ get_node_title(parent) : parent.get('attr').get('evita_apt') })
+		return
+
+	do_each_once_with_deref(node, None, collect_mitigations)
 	return
 
 def do_children_each_riskpoint(node, nodes_context):
@@ -161,6 +195,8 @@ def do_each_riskpoint(node, nodes_context):
 	global objective_node
 	global riskpoint_node
 	global attack_vector_collection
+	global mitigation_collection
+	global root_node
 
 	if is_riskpoint(node):
 		print("\n\n| Attack Method | Safety Risk | Privacy Risk | Financial Risk | Operational Risk | Combined Attack Probability |")
@@ -172,11 +208,17 @@ def do_each_riskpoint(node, nodes_context):
 		print("\n\n| Attack Vector | Attack Vector Probability |")
 		print("|---------------------------------------------------------------------------------------|------------------------|")
 		attack_vector_collection = list()
+
 		do_each_attackvector(node, nodes_context)
+		clear_once_with_deref(root_node)
+
 		attack_vector_collection.sort(key=lambda node: node.get('attr').get('evita_apt'), reverse=True)
 		for attack_vector in attack_vector_collection:
 		    emit_attackvector_row(riskpoint_node, attack_vector)
-		return
+
+		#collect all the mitigations, their riskpoints and all attack vectors to which the mitigation can be applied
+		do_each_mitigation(node)
+		clear_once_with_deref(root_node)
 
 	if not is_node_a_leaf(node):
 		do_children_each_riskpoint(node, nodes_context)
@@ -203,6 +245,10 @@ do_children_firstpass(root_node)
 objective_node = None
 riskpoint_node = None
 
+global mitigation_collection
+#mitigation_collection = OrderedDict(dict(), key=lambda (k,v): v.get('total_risk')*100 + v.get('max_attack_probability'))
+mitigation_collection = dict()
+
 print("\n\n# EVITA Risk Analysis: Attack Tree Tables")
 for objective in objectives:
 	print("\n\n### Attack Tree Table for %s" % get_node_title(objective))
@@ -212,4 +258,17 @@ for objective in objectives:
 
 print("\n\n# EVITA Risk Analysis: Security Requirements")
 print("\nIn this section we will list, in priority order, all the mitigations against the attack vectors identified in the analysis. The priority order is defined by sorting first by Risk, then by *Combined Attack Probability*")
-#TODO
+print("\nPlease note that, due to this tool feature being unimplemented, the sorting of these mitigations is not done here. Eventually it will be based on a metric of impact of each mitigation.")
+
+#TODO: do a more robust sort based on impact of the mitigation
+
+for mitigation,vectors in mitigation_collection.iteritems():
+	print("\n\n## %s" % mitigation)
+	sorted_vectors = OrderedDict(sorted(vectors.iteritems(), key= vectors.get))
+	print("\n| Attack Vector | Attack Vector Probability |")
+	print("|---------------------------------------------------------------------------------------|------------------------|")
+	for vector_title,probability in sorted_vectors.iteritems():
+		print("| %s | %s |" % (
+			vector_title, #TODO: make this a hyperlink to the attack vector section (when !word output)
+			get_probability_label(probability)
+		))
