@@ -56,7 +56,7 @@ def add_label(depth, node):
 	do_ideas(depth, node)
 	node_title = node.get('title', '')
 
-	if node_title == 'AND':
+	if node_title.strip() == 'AND':
 		return
 
 	if node_title == '...':

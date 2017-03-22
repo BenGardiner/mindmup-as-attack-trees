@@ -3,8 +3,6 @@
 from mindmup_as_attack_trees import *
 import sys,json
 import copy
-import html2text
-from bs4 import BeautifulSoup
 import re
 import ipdb
 import argparse
@@ -23,18 +21,13 @@ parser.add_argument("--auto-attack-threat", action='store_true', help="create at
 parser.add_argument("--mitigations-as-nodes", action='store_true', help="mitigations are separate nodes in this attack tree, search for them and collate them to create the sections for the report")
 args = parser.parse_args()
 
-text_maker = html2text.HTML2Text()
-text_maker.body_width = 0 #disable random line-wrapping from html2text
-
 tops = list()
 seconds = list()
 
 def truncate(node, cuts, first):
 	if not first and is_cut(node, cuts) and 'ideas' in node:
-		title = node.get('title','')
-		parsed_title = re.match(r'(\d+\..*?)\s(.*?)$',title).groups()
-
-		node.update({'title': "%s (%s)" % (parsed_title[1], parsed_title[0])})
+		reference_title = get_node_reference_title(node)
+		node.update({ 'title': reference_title })
 		if not 'attr' in node:
 			node.update({'attr': dict()})
 		node['attr'].update({'collapsed': True})
@@ -48,11 +41,21 @@ def get_safe_filename(notsafe):
 	safe = notsafe.replace("?", "_").replace("/", "_").replace(",", "_").replace('\'','_').replace('(','_').replace(')','_').replace('  ', ' ')
 	return safe[:200] if len(safe) > 200 else safe
 
+def remove_mitigations(node):
+	def mitigations_remover(node):
+		if is_attack_vector(node):
+			node.update({ 'ideas' : dict() })
+		return
+
+	apply_each_node(node, mitigations_remover)
+	return
+
 def emit_tree_snapshot(title, node):
 	global cuts
 	global resources
 
 	truncated = truncate(copy.deepcopy(node), cuts, True)
+	remove_mitigations(truncated)
 
 	#TODO: include also the 'theme' from the graphic
 	if not resources is None:
@@ -129,7 +132,7 @@ def add_label(depth, cuts, node):
 
 	if is_attack_vector(node):
 		print_title_headings_for_attack_vector_node(level, working_title)
-		print_other_headings(level, working_title, description)
+		print_other_headings(node, level, working_title, description)
 	else:
 		if len(description.strip()) > 0:
 			print_title_headings_for_intermediate_node(level, working_title)
@@ -148,8 +151,9 @@ def print_title_headings_for_intermediate_node(level,title):
 def print_title_headings_for_attack_vector_node(level,title):
 	print("\n\n%s Attack Vector Node %s" % ('#' * (level), title ))
 
-def print_other_headings(level, title, description):
+def print_other_headings(node, level, title, description):
 	global evita_tags
+	global nodes_lookup
 
 	description_lines = description.splitlines()
 
@@ -159,7 +163,7 @@ def print_other_headings(level, title, description):
 	previous_blank=False
 	suppress_this_subsection=False
 
-	if "out of scope".lower() in description.lower():
+	if is_outofscope(node):
 		#don't emit the 'missing' sections for out of scope nodes
 		classification_heading_found=True
 		threat_heading_found=True
@@ -211,8 +215,26 @@ def print_other_headings(level, title, description):
 		print
 	if args.mitigations_as_nodes:
 		#TODO
-		#print("\n%s Mitigation Required" % ('#' * (level+1)))
-		print
+		children = get_node_children(node)
+		print("\n%s Mitigation%s Required\n" % ('#' * (level+1), "" if len(children) <= 1 else "s"))
+		if len(children) == 0:
+			print("\nNo mitigations are highlighted for this particular attack vector; the effective mitigations against attacks of the system will be on other conjunctive (AND) nodes in the attack trees.")
+		else:
+			for child in get_node_children(node):
+				if is_mitigation(child):
+					#deref any references
+					target_node = child
+					if is_node_a_reference(target_node):
+						target_node = get_node_referent(target_node, nodes_lookup)
+
+					#build a reference-like title
+					title = get_node_reference_title(target_node).replace("Mitigation: ",'')
+
+					#print bullet for title and indented group for description (if any)
+					print("* %s\n" % title)
+
+					for line in get_description(target_node).splitlines():
+						print("    %s\n" % line)
 
 def add_graphic(node, title):
 	emit_tree_snapshot(title, node)
@@ -268,9 +290,11 @@ if 'resources' in data:
 
 if 'id' in data and data['id'] == 'root':
 	#version 2 mindmup
-	tops.append(data['ideas']['1'])
+	root = data['ideas']['1']
 else:
-	tops.append(data)
+	root = data
 
+nodes_lookup = build_nodes_lookup(root)
+tops.append(root)
 do_tops()
 

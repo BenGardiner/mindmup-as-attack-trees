@@ -53,6 +53,35 @@ def is_objective(node):
 	raw_description = get_raw_description(node)
 	return 'OBJECTIVE::' in raw_description
 
+def apply_each_node(root, fn):
+	for child in get_node_children(root):
+		apply_each_node(child, fn)
+	fn(root)
+
+	return
+
+def build_nodes_lookup(root):
+	nodes_lookup = dict()
+
+	def collect_all_nodes(node):
+		node_title = node.get('title', '')
+
+		if node_title.strip() == 'AND':
+			return
+
+		if node_title == '...':
+			return
+
+		if is_node_a_reference(node):
+			return
+
+		if nodes_lookup.get(node_title, None) is None:
+			nodes_lookup.update({node_title: node})
+		return
+
+	apply_each_node(root, collect_all_nodes)
+	return nodes_lookup
+
 def detect_html(text):
 	return bool(BeautifulSoup(text, "html.parser").find())
 
@@ -114,6 +143,13 @@ def get_node_referent_title(node):
 		referent_coords = re.search(r'\((\d+\..*?)\)', title).groups()[0]
 		wip_referent_title = "%s %s" % (referent_coords, re.sub(r'\(\d+\..*?\)', '', title).strip())
 	return wip_referent_title
+
+def get_node_reference_title(node):
+	title = node.get('title','')
+	parsed_title = re.match(r'(\d+\..*?)\s(.*?)$',title).groups()
+
+	wip_reference_title = "%s (%s)" % (parsed_title[1], parsed_title[0])
+	return wip_reference_title
 
 def is_node_a_reference(node):
 	title = node.get('title', '')
