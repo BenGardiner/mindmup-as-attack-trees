@@ -41,11 +41,15 @@ const styles = `
   fill: #999;
 }
 
+.node rect {
+  fill: #999;
+}
+
 .node text {
   font: 10px sans-serif;
 }
 
-.node--leaf_oos text {
+.node--vector_oos text {
   text-decoration: line-through;
 }
 
@@ -54,17 +58,26 @@ const styles = `
   fill: #FFF;
 }
 
-.node--leaf circle {
+.node--vector circle {
   fill: #000;
 }
 
-.node--leaf_ref circle {
+.node--vector_ref circle {
   stroke: #000;
   fill: #FFF;
 }
 
-.node--leaf_oos circle {
+.node--vector_oos circle {
   fill: #000;
+}
+
+.node--mitigation rect {
+  fill: #000;
+}
+
+.node--mitigation_ref rect {
+  stroke: #000;
+  fill: #FFF;
 }
 
 .link {
@@ -308,11 +321,14 @@ do_draw = function(json) {
           var textAlign = text.style('text-anchor') || 'left';
           var alignmentBase = text.style('alignment-baseline') || 'baseline';
           var adjusted_width = width;
-          if (text.datum().parent === null) {
+          var node = text.datum();
+          if (node.parent === null) {
             adjusted_width = width/2 + margin.left;
           }
-          else if (typeof text.datum().children === 'undefined' && (! argv.r)) {
-            adjusted_width = 5/8 * width;
+          else if (is_attack_vector(node) || is_mitigation(node)) {
+            if (! argv.r) {
+              adjusted_width = 5/8 * width;
+            }
           }
 
           dy = 0;
@@ -367,6 +383,29 @@ do_draw = function(json) {
     return typeof d.children === 'undefined';
   }
 
+  function is_mitigation(d) {
+    return is_leaf(d) && /Mitigation: /.test(get_title(d));
+  }
+
+  function is_all(d, predicate) {
+    if (typeof d.children === 'undefined') return True;
+
+    result = true;
+    d.children.forEach(function(d) {
+      result = result & predicate(d);
+    });
+
+    return result;
+  }
+
+  function is_attack_vector(d) {
+    if (! is_leaf(d)) {
+      return is_all(d, is_mitigation);
+    } else {
+      return ! is_mitigation(d);
+    }
+  }
+
   function is_reference(d) {
     return ( get_title(d).search("\\(\\*\\)") !== -1  ) || (/\(\d+\..*?\)/.test(get_title(d)));
   }
@@ -379,27 +418,43 @@ do_draw = function(json) {
     .data(root_node.descendants())
     .enter().append("g")
       .attr("class", function(d) {
-        if (typeof d.children === 'undefined') {
+        if (is_attack_vector(d)) {
           if (is_reference(d)) {
-            return "node node--leaf_ref";
+            return "node node--vector_ref";
           } else if (is_out_of_scope(d)) {
-            return "node node--leaf_oos";
+            return "node node--vector_oos";
           } else {
-            return "node node--leaf";
+            return "node node--vector";
+          }
+        } else if (is_mitigation(d)) {
+          if (is_reference(d)) {
+            return "node node--mitigation_ref";
+          } else {
+            return "node node--mitigation";
           }
         } else {
           return "node node--internal";
         }
-        return "node" + (d.children ? " node--internal" : " node--leaf"); 
+        return "node node--internal"; 
       })
       .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
 
   node.append("circle")
+      .filter(function (d) { return ! is_mitigation(d); })
       .style("stroke", function(d) {
         if (typeof d.data.attr !== 'undefined')
           return apt_colormap(d.data.attr.evita_apt);
       })
       .attr("r", 2.5);
+
+  node.append("rect")
+      .filter(function (d) { return is_mitigation(d); })
+      .style("stroke", function(d) {
+        if (typeof d.data.attr !== 'undefined')
+          return apt_colormap(d.data.attr.evita_apt);
+      })
+      .attr("width", 5.0)
+      .attr("heigth", 5.0);
 
   node.append("text")
       .attr("dy", 3)
@@ -408,7 +463,7 @@ do_draw = function(json) {
           if (d.parent === null) {
             return "start";
           }
-          return d.children ? "middle" : "start";
+          return (is_attack_vector(d) || is_mitigation(d)) ? "start" : "middle";
       })
       .style("alignment-baseline", function(d) {
           if (d.data.title === "AND") {
@@ -417,7 +472,7 @@ do_draw = function(json) {
           if (d.parent === null) {
             return "ideographic";
           }
-          return d.children ? "hanging" : "baseline";
+          return (is_attack_vector(d) || is_mitigation(d)) ? "baseline" : "hanging";
       })
       .text(function(d) { return d.data.title; })
       .call(d3TextWrap, text_wrap_width, 0, 0);
