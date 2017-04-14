@@ -123,7 +123,7 @@ def get_description(node):
 	description = re.sub(r'\|\n+\|', '|\n|', description, re.M)
 
 	#remove special tags (e.g. SUBTREE:: OBJECTIVE:: EVITA::)
-	description = description.replace('SUBTREE::', '').replace('OBJECTIVE::','').replace('RISK_HERE::', '')
+	description = description.replace('SUBTREE::', '').replace('OBJECTIVE::','').replace('RISK_HERE::', '').replace('OUT_OF_SCOPE::','')
 
 	description = re.sub(r'\nEVITA::.*\n', '\n\n', description, re.M)
 

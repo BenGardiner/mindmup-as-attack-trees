@@ -492,7 +492,7 @@ def do_children_severitiespass(node, nodes_context):
 	return
 
 def do_node_severitiespass(node, nodes_context):
-	if is_objective(node):
+	if is_objective(node) and not is_outofscope(node):
 		parse_evita_severities(node)
 		append_evita_severity_table(node)
 
