@@ -261,10 +261,10 @@ def append_evita_severity_table(node):
 		"%s| Safety Severity | Privacy Severity | Financial Severity | Operational Severity |%s" % bookends +
 		"%s|-------------------------|-------------------------|-------------------------|-------------------------|%s" % bookends +
 		("%s| %%s | %%s | %%s | %%s |%s" % bookends ) % (
-			get_evita_fs_label(node),
-			get_evita_os_label(node),
+			get_evita_ss_label(node),
 			get_evita_ps_label(node),
-			get_evita_ss_label(node)
+			get_evita_fs_label(node),
+			get_evita_os_label(node)
 		)
 	)
 
