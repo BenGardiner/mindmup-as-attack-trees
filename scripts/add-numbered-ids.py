@@ -102,16 +102,16 @@ def process_secondpass(node):
 		node.update({'title': working_title})
 
 	description = get_raw_description(node)
-	matches = re.findall(r'\*[^\s*]+(?:\s+[^\s*]+)* \(\*\)\*',description)
+	matches = re.findall(r'\*[^\s*]+(?:\s+[^\s*]+)* \(\*\)\s*\*',description)
 	for match in matches:
 	    reference = re.sub(r'\*(.*?) \(\*\)\*', r'\1', match).strip()
 	    referent_node = nodes_lookup.get(reference, None)
 	    if not referent_node is None:
-		print('resolving %s' % reference)
-		description = re.sub(r'\*(%s) \(\*\)\*' % reference, r'*\1 (%s)*' % referent_node.get('coords'), description)
+		print('resolving description reference: %s' % reference)
+		description = re.sub(r'\*(%s) \(\*\)\*' % re.escape(reference), r'*\1 (%s)*' % referent_node.get('coords'), description)
 		set_raw_description(node, description)
 	    else:
-		print('warning not resolving %s' % reference)
+		print('warning not resolving description reference: %s' % reference)
 	return
 
 def foreach_node_thirdpass(node):

@@ -270,7 +270,7 @@ def append_evita_severity_table(node):
 
 def parse_evita_severities(node):
 	if not 'EVITA::' in get_raw_description(node):
-		raise ValueError("couldn't find EVITA:: tag in attack vector node", node)
+		raise ValueError("couldn't find EVITA:: tag in attacker objective node", node)
 
 	for line in get_unclean_description(node).splitlines():
 		if not 'EVITA::' in line:
