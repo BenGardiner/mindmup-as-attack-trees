@@ -15,6 +15,10 @@ def is_node_a_leaf(node):
 def get_node_title(node):
 	return node.get('title', '')
 
+def set_node_title(node, title):
+	node.update({'title': title})
+	return
+
 def is_mitigation(node):
 	return is_node_a_leaf(node) and ( 'Mitigation: ' in get_node_title(node) )
 
