@@ -9,6 +9,13 @@ text_maker.body_width = 0 #disable random line-wrapping from html2text
 def get_node_children(node):
 	return OrderedDict(sorted(node.get('ideas', dict()).iteritems(), key=lambda t: float(t[0]))).values()
 
+def remove_child(parent, node):
+	children = parent.get('ideas', dict())
+	for key, value in children.items():
+		if value is node:
+			children.pop(key)
+	return
+
 def is_node_a_leaf(node):
 	return len(get_node_children(node)) == 0
 
@@ -49,7 +56,7 @@ def is_all_children(node, predicate):
 
 def is_attack_vector(node):
 	if is_node_a_leaf(node):
-	    return not is_mitigation(node)
+	    return (not is_mitigation(node)) and (not is_objective(node))
 	else:
 	    return is_all_children(node, is_mitigation)
 
