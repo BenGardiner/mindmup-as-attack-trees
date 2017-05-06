@@ -59,6 +59,8 @@ def do_node_firstpass(node):
 	#TODO ERROR EVITA:: without enough (terminated) elements of the vector (e.g. missing | terminator on last column)
 
 	#TODO ERROR no RISK_HERE:: node
+
+	#TODO Warn on reference to non subtree-root node (to ensure that re-used nodes are sufficiently abstracted to be their own section
 	return
 
 def is_node_weigthed(node):
@@ -232,3 +234,5 @@ else:
 
 if top_weight != 0:
 	print("ERROR: weights not propagated correctly through tree. Expecting 0. Got %s" % top_weight)
+
+#TODO: check for missing referents of mitigations too
