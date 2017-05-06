@@ -105,14 +105,20 @@ def do_children_secondpass(node, nodes_context):
 		do_node_secondpass(child, nodes_context)
 	return
 
+objective_context = None
+
 def do_node_secondpass(node, nodes_context):
 	global nodes_lookup
 	global fixups_queue
+	global objective_context
 
 	if is_node_weigthed(node):
 		return
 
 	update_node_weight(node, float('nan'))
+
+	if is_objective(node):
+	    objective_context = node
 
 	if is_node_a_reference(node):
 		node_referent = get_node_referent(node, nodes_lookup)
@@ -149,8 +155,12 @@ def do_node_secondpass(node, nodes_context):
 				if math.isnan(get_node_weight(node)):
 					print("ERROR NaN propagting through weights at node: %s (%s)" % (get_node_title(node),nodes_context))
 
-	if math.isinf(get_node_weight(node)):
+	if (not is_mitigation(node)) and (not is_outofscope(node)) and (not objective_context is None) and math.isinf(get_node_weight(node)):
 		fixups_queue.append(node)
+
+	if is_objective(node):
+	    objective_context = None
+
 	return
 
 def do_fixups(nodes_context):
@@ -176,13 +186,23 @@ def do_children_checkinfs(node, nodes_context):
 	return
 
 def do_node_checkinfs(node, nodes_context):
-	if not is_attack_vector(node):
-	    nodes_context.append(get_node_title(node))
-	    do_children_checkinfs(node, nodes_context)
-	    nodes_context.pop()
+	global objective_context
 
-	if math.isinf(get_node_weight(node)):
+	if is_objective(node):
+	    objective_context = node
+
+	if not is_attack_vector(node):
+		nodes_context.append(get_node_title(node))
+		do_children_checkinfs(node, nodes_context)
+		nodes_context.pop()
+
+	if math.isinf(get_node_weight(node)) and (not is_outofscope(node)) and (not is_mitigation(node)) and (not objective_context is None):
 		print("ERROR leftover %s at %s" % (get_node_weight(node), get_node_title(node)))
+
+	if is_objective(node):
+	    objective_context = None
+
+	return
 
 if len(sys.argv) < 2:
 	fd_in=sys.stdin

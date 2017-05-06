@@ -402,12 +402,18 @@ def do_children_secondpass(node, nodes_context):
 		do_node_secondpass(child, nodes_context)
 	return
 
+objective_context = None
+
 def do_node_secondpass(node, nodes_context):
 	global nodes_lookup
 	global fixups_queue
+	global objective_context
 
 	if is_node_weigthed(node):
 		return
+
+	if is_objective(node):
+	    objective_context = None
 
 	update_node_apt(node, float('nan'))
 
@@ -429,7 +435,8 @@ def do_node_secondpass(node, nodes_context):
 		if is_attack_vector(node):
 			parse_evita_raps(node)
 			derive_evita_apt(node)
-			append_evita_rap_table(node)
+			if not is_outofscope(node):
+				append_evita_rap_table(node)
 
 		else:
 			nodes_context.append(get_node_title(node))
@@ -443,8 +450,12 @@ def do_node_secondpass(node, nodes_context):
 				neg_infs_of_children(node)
 				update_node_apt(node, get_max_apt_of_children(node))
 
-	if math.isinf(get_node_apt(node)):
+	if (not is_mitigation(node)) and (not is_objective(node)) and (not objective_context is None) and math.isinf(get_node_apt(node)):
 		fixups_queue.append(node)
+
+	if is_objective(node):
+	    objective_context = None
+
 	return
 
 def do_fixups(nodes_context):
@@ -512,7 +523,7 @@ def do_node_riskspass(node, nodes_context):
 	if is_objective(node):
 		objective_node = node
 
-	if is_riskpoint(node):
+	if is_riskpoint(node) and (not is_outofscope(node)):
 		derive_evita_risks(node, objective_node)
 		return
 
