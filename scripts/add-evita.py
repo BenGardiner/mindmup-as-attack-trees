@@ -365,8 +365,9 @@ def is_node_weigthed(node):
 def update_node_apt(node, apt):
 	if node.get('attr', None) is None:
 		node.update({'attr': dict()})
-	
+
 	node.get('attr').update({'evita_apt': apt})
+	return
 
 def pos_infs_of_children(node):
 	for child in get_node_children(node):
@@ -437,8 +438,9 @@ def do_node_secondpass(node, nodes_context):
 			derive_evita_apt(node)
 			if not is_outofscope(node):
 				append_evita_rap_table(node)
-
-		else:
+		elif is_mitigation(node):
+			update_node_apt(node, 0)
+		elif not is_outofscope(node):
 			nodes_context.append(get_node_title(node))
 			do_children_secondpass(node, nodes_context)
 			nodes_context.pop()
@@ -483,7 +485,7 @@ def do_node_thirdpass(node, nodes_context):
 	global nodes_lookup
 	global fixups_queue
 
-	if not is_attack_vector(node):
+	if (not is_attack_vector(node)) and (not is_mitigation(node)):
 		nodes_context.append(get_node_title(node))
 		do_children_thirdpass(node, nodes_context)
 		nodes_context.pop()
