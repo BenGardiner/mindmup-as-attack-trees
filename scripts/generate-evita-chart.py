@@ -114,6 +114,9 @@ def emit_attackvector_row(riskpoint_node, node):
 	))
 	return
 
+def emit_mitigation_bullet(riskpoint_node, mitigation_title):
+	print("\n* %s" % mitigation_title)
+
 def do_each_once_with_deref(node, parent, fn):
 	global nodes_lookup
 	global riskpoint_node
@@ -173,7 +176,7 @@ def do_each_mitigation(node):
 		target_node = node
 		if is_node_a_reference(target_node):
 		    target_node = get_node_referent(target_node)
-		mitigation_title = get_node_title(target_node)
+		mitigation_title = get_node_reference_title(target_node).replace("Mitigation: ",'')
 
 		#TODO
 		if mitigation_collection.get(mitigation_title, None) is None:
@@ -204,21 +207,14 @@ def do_each_riskpoint(node, nodes_context):
 		riskpoint_node = node
 		emit_riskpoint_row(riskpoint_node)
 
-		print("\n\nThe following table summarizes the attack vector nodes contributing to the risks of above attack method and their Probability (derived using the EVITA method as discussed in this document). NB: these are all of the attack vectors which contribute to the risks; however, to what degree they make a contribution is borne-out of the attack tree structure so please consult that for details of how much contribution they make individually.")
-		print("\n\n| Attack Vector | Attack Vector Probability |")
-		print("|---------------------------------------------------------------------------------------|------------------------|")
-		attack_vector_collection = list()
-
-		do_each_attackvector(node, nodes_context)
-		clear_once_with_deref(root_node)
-
-		attack_vector_collection.sort(key=lambda node: node.get('attr').get('evita_apt'), reverse=True)
-		for attack_vector in attack_vector_collection:
-		    emit_attackvector_row(riskpoint_node, attack_vector)
-
+		print("\n\n The following is a list of all mitigations recommended in the context of this attacker objective. There is no specific priority of the mitigations ascribed to the ordering here.")
 		#collect all the mitigations, their riskpoints and all attack vectors to which the mitigation can be applied
 		do_each_mitigation(node)
 		clear_once_with_deref(root_node)
+
+		for mitigation,vectors in mitigation_collection.iteritems():
+			emit_mitigation_bullet(riskpoint_node, mitigation)
+
 
 	if not is_node_a_leaf(node):
 		do_children_each_riskpoint(node, nodes_context)
@@ -249,26 +245,11 @@ global mitigation_collection
 #mitigation_collection = OrderedDict(dict(), key=lambda (k,v): v.get('total_risk')*100 + v.get('max_attack_probability'))
 mitigation_collection = dict()
 
-print("\n\n# EVITA Risk Analysis: Attack Tree Tables")
+print("\n\n# EVITA Risk Analysis: Mitigations Collections")
 for objective in objectives:
-	print("\n\n### Attack Tree Table for %s" % get_node_title(objective))
-	objective_node = objective
-	print("\nIn this section we will summarize the risks of all the attack methods of the objective *%s* and the attack vectors contributing to those risks (derived using the EVITA method as discussed in this document). NB: some attack methods may be the same node as the attack objective in what follows." % get_node_title(objective_node))
-	do_each_riskpoint(objective, nodes_context)
+	if not is_outofscope(objective):
+		print("\n\n### Mitigations for %s" % get_node_title(objective))
+		objective_node = objective
+		do_each_riskpoint(objective, nodes_context)
+		mitigation_collection.clear()
 
-print("\n\n# EVITA Risk Analysis: Security Requirements")
-print("\nIn this section we will list, in priority order, all the mitigations against the attack vectors identified in the analysis. The priority order is defined by sorting first by Risk, then by *Combined Attack Probability*")
-print("\nPlease note that, due to this tool feature being unimplemented, the sorting of these mitigations is not done here. Eventually it will be based on a metric of impact of each mitigation.")
-
-#TODO: do a more robust sort based on impact of the mitigation
-
-for mitigation,vectors in mitigation_collection.iteritems():
-	print("\n\n## %s" % mitigation)
-	sorted_vectors = OrderedDict(sorted(vectors.iteritems(), key= vectors.get))
-	print("\n| Attack Vector | Attack Vector Probability |")
-	print("|---------------------------------------------------------------------------------------|------------------------|")
-	for vector_title,probability in sorted_vectors.iteritems():
-		print("| %s | %s |" % (
-			vector_title, #TODO: make this a hyperlink to the attack vector section (when !word output)
-			get_probability_label(probability)
-		))
