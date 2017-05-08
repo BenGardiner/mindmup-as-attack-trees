@@ -148,7 +148,7 @@ def append_evita_rap_table(node):
 	update_raw_description(node, description +
 		"%s%s" % bookends +
 		"%s| Elapsed Time | Expertise | Knowledge | Window of Opportunity | Equipment |%s" % bookends +
-		"%s|-------------------------|-------------------------|-------------------------|-------------------------|-------------------------|%s" % bookends +
+		"%s|-----------------------------|-----------------------------|-----------------------------|-----------------------------|-----------------------------|%s" % bookends +
 		("%s| %%s | %%s | %%s | %%s | %%s |%s" % bookends ) % (
 			get_evita_et_label(node),
 			get_evita_e_label(node),

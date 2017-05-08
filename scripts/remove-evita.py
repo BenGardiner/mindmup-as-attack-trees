@@ -45,7 +45,7 @@ def trim_tables(node):
 	description = re.sub(
 		re.escape("%s%s" % bookends) +
 		re.escape("%s| Elapsed Time | Expertise | Knowledge | Window of Opportunity | Equipment |%s" % bookends) +
-		re.escape("%s|-------------------------|-------------------------|-------------------------|-------------------------|-------------------------|%s" % bookends) +
+		re.escape("%s|-----------------------------|-----------------------------|-----------------------------|-----------------------------|-----------------------------|%s" % bookends) +
 		re.escape(bookends[0]) + r'\| [^|]+ \| [^|]+ \| [^|]+ \| [^|]+ \| [^|]+ \|' + re.escape(bookends[1]),
 		'', description)
 
