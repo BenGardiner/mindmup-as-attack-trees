@@ -169,6 +169,9 @@ objectives = collect_objectives(root_node)
 objective_node = None
 riskpoint_node = None
 
+propagate_all_the_apts(root_node, nodes_lookup)
+derive_node_risks(root_node, nodes_context)
+
 global mitigation_collection
 #mitigation_collection = OrderedDict(dict(), key=lambda (k,v): v.get('total_risk')*100 + v.get('max_attack_probability'))
 mitigation_collection = dict()

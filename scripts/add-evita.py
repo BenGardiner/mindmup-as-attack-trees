@@ -312,23 +312,6 @@ def set_node_severities(node, nodes_context):
 	    set_node_severities(child, nodes_context)
 	return
 
-def derive_node_risks(node, nodes_context):
-	global nodes_lookup
-	global objective_node
-
-	saved_objective = objective_node
-	if is_objective(node):
-		objective_node = node
-		apt_propagator(node)
-
-	if is_riskpoint(node) and (not is_outofscope(node)):
-		derive_evita_risks(node, objective_node)
-		return
-
-	for child in get_node_children(node):
-	    derive_node_risks(child, nodes_context)
-	objective_node = saved_objective
-
 if args.mupin is None:
 	fd_in=sys.stdin
 else:
@@ -356,8 +339,6 @@ set_node_severities(root_node, nodes_context)
 
 if not args.only_severities:
 	set_node_apts(root_node)
-	propagate_all_the_apts(root_node, nodes_lookup)
-	derive_node_risks(root_node, nodes_context)
 
 str = json.dumps(data, indent=2, sort_keys=True)
 str = re.sub(r'\s+$', '', str, 0, re.M)

@@ -385,4 +385,26 @@ def derive_evita_risks(this_node, objective_node):
 	these_attrs.update({'evita_sr': get_evita_security_risk_level(objective_attrs.get('evita_ss'), these_attrs.get('evita_apt'))})
 	return
 
+def final_propagate_up_to_objectives(root_node):
+	def final_propagator(node):
+		if is_objective(node):
+			apt_propagator(node)
+		return
 
+	apply_each_node(root_node, final_propagator)
+	return
+
+def derive_node_risks(root_node, nodes_context):
+	final_propagate_up_to_objectives(root_node)
+
+	objective_node = None
+	def derivor(node):
+		if is_objective(node):
+			objective_node = node
+
+		if is_riskpoint(node) and (not is_outofscope(node)):
+			derive_evita_risks(node, objective_node)
+		return
+
+	apply_each_node(root_node, derivor)
+	return
