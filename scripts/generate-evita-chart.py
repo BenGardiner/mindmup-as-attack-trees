@@ -15,39 +15,6 @@ def info(type, value, tb):
 sys.excepthook = info
 
 levels_count = dict()
-nodes_lookup = dict()
-
-objectives = list()
-
-def do_children_firstpass(node):
-	for child in get_node_children(node):
-		do_node_firstpass(child)
-	return
-
-def do_node_firstpass(node):
-	global nodes_lookup
-	global objectives
-
-	do_children_firstpass(node)
-
-	node_title = node.get('title', '')
-
-	if node_title == 'AND':
-		return
-
-	if node_title == '...':
-		return
-
-	if is_node_a_reference(node):
-		return
-
-	if nodes_lookup.get(node_title, None) is None:
-		nodes_lookup.update({node_title: node})
-
-	if is_objective(node):
-		objectives.append(node)
-
-	return
 
 def is_node_weigthed(node):
 	weight = get_node_weight(node)
@@ -117,9 +84,7 @@ def emit_attackvector_row(riskpoint_node, node):
 def emit_mitigation_bullet(riskpoint_node, mitigation_title):
 	print("\n* %s" % mitigation_title)
 
-def do_each_attackvector(node,nodes_context):
-	global nodes_lookup
-
+def do_each_attackvector(node, nodes_context, nodes_lookup):
 	def collect_attack_vectors(node, parent):
 		global attack_vector_collection
 
@@ -134,9 +99,7 @@ def do_each_attackvector(node,nodes_context):
 	clear_once_with_deref(node)
 	return
 
-def do_each_mitigation(node):
-	global nodes_lookup
-
+def do_each_mitigation(node, nodes_lookup):
 	def collect_mitigations(node, parent):
 		global mitigation_collection
 		global riskpoint_node
@@ -160,12 +123,7 @@ def do_each_mitigation(node):
 	clear_once_with_deref(node)
 	return
 
-def do_children_each_riskpoint(node, nodes_context):
-	for child in get_node_children(node):
-		do_each_riskpoint(child, nodes_context)
-	return
-
-def do_each_riskpoint(node, nodes_context):
+def do_each_riskpoint(node, nodes_context, nodes_lookup):
 	global riskpoint_node
 	global mitigation_collection
 	global root_node
@@ -178,14 +136,15 @@ def do_each_riskpoint(node, nodes_context):
 
 		print("\n\n The following is a list of all mitigations recommended in the context of this attacker objective. There is no specific priority of the mitigations ascribed to the ordering here.")
 		#collect all the mitigations, their riskpoints and all attack vectors to which the mitigation can be applied
-		do_each_mitigation(node)
+		do_each_mitigation(node, nodes_lookup)
 
 		for mitigation,vectors in mitigation_collection.iteritems():
 			emit_mitigation_bullet(riskpoint_node, mitigation)
 
 
 	if not is_node_a_leaf(node):
-		do_children_each_riskpoint(node, nodes_context)
+		for child in get_node_children(node):
+			do_each_riskpoint(child, nodes_context, nodes_lookup)
 	return
 
 if len(sys.argv) < 2:
@@ -204,7 +163,8 @@ if 'id' in data and data['id'] == 'root':
 else:
 	root_node = data
 
-do_children_firstpass(root_node)
+nodes_lookup = build_nodes_lookup(root_node)
+objectives = collect_objectives(root_node)
 
 objective_node = None
 riskpoint_node = None
@@ -218,6 +178,6 @@ for objective in objectives:
 	if not is_outofscope(objective):
 		print("\n\n### Mitigations for %s" % get_node_title(objective))
 		objective_node = objective
-		do_each_riskpoint(objective, nodes_context)
+		do_each_riskpoint(objective, nodes_context, nodes_lookup)
 		mitigation_collection.clear()
 

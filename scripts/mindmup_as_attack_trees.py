@@ -72,7 +72,7 @@ def apply_each_node(root, fn):
 
 	return
 
-def apply_each_node_below_objectives(root, fn):
+def collect_objectives(root):
 	objectives = list()
 	def objectives_collector(node):
 		if is_objective(node):
@@ -80,6 +80,10 @@ def apply_each_node_below_objectives(root, fn):
 		return
 	apply_each_node(root, objectives_collector)
 
+	return objectives
+
+def apply_each_node_below_objectives(root, fn):
+	objectives = collect_objectives(root)
 	for objective in objectives:
 		for child in get_node_children(objective):
 			apply_each_node(child, fn)
