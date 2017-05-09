@@ -117,41 +117,9 @@ def emit_attackvector_row(riskpoint_node, node):
 def emit_mitigation_bullet(riskpoint_node, mitigation_title):
 	print("\n* %s" % mitigation_title)
 
-def do_each_once_with_deref(node, parent, fn):
-	global nodes_lookup
-	global riskpoint_node
-
-	if node.get('done', False):
-		return
-
-	node.update({'inprogress': True})
-
-	if is_node_a_reference(node):
-		node_referent = get_node_referent(node, nodes_lookup)
-
-		if not node_referent.get('inprogress', False):
-			do_each_once_with_deref(node_referent, parent, fn)
-	else:
-		if not is_node_a_leaf(node):
-			for child in get_node_children(node):
-				do_each_once_with_deref(child, node, fn)
-
-		if not node.get('done', False):
-			node.update({'done': True})
-			fn(node, parent)
-
-	node.update({'inprogress': False})
-	return
-
-def clear_once_with_deref(node):
-	for child in get_node_children(node):
-		clear_once_with_deref(child)
-
-	node.update({'inprogress': False})
-	node.update({'done': False})
-	return
-
 def do_each_attackvector(node,nodes_context):
+	global nodes_lookup
+
 	def collect_attack_vectors(node, parent):
 		global attack_vector_collection
 
@@ -162,10 +130,13 @@ def do_each_attackvector(node,nodes_context):
 
 	collect_attack_vectors(node, None)
 
-	do_each_once_with_deref(node, None, collect_attack_vectors)
+	do_each_once_with_deref(node, None, collect_attack_vectors, nodes_lookup)
+	clear_once_with_deref(node)
 	return
 
 def do_each_mitigation(node):
+	global nodes_lookup
+
 	def collect_mitigations(node, parent):
 		global mitigation_collection
 		global riskpoint_node
@@ -185,7 +156,8 @@ def do_each_mitigation(node):
 		mitigation_collection.get(mitigation_title).update({ get_node_title(parent) : parent.get('attr').get('evita_apt') })
 		return
 
-	do_each_once_with_deref(node, None, collect_mitigations)
+	do_each_once_with_deref(node, None, collect_mitigations, nodes_lookup)
+	clear_once_with_deref(node)
 	return
 
 def do_children_each_riskpoint(node, nodes_context):
@@ -194,10 +166,7 @@ def do_children_each_riskpoint(node, nodes_context):
 	return
 
 def do_each_riskpoint(node, nodes_context):
-	global nodes_lookup
-	global objective_node
 	global riskpoint_node
-	global attack_vector_collection
 	global mitigation_collection
 	global root_node
 
@@ -210,7 +179,6 @@ def do_each_riskpoint(node, nodes_context):
 		print("\n\n The following is a list of all mitigations recommended in the context of this attacker objective. There is no specific priority of the mitigations ascribed to the ordering here.")
 		#collect all the mitigations, their riskpoints and all attack vectors to which the mitigation can be applied
 		do_each_mitigation(node)
-		clear_once_with_deref(root_node)
 
 		for mitigation,vectors in mitigation_collection.iteritems():
 			emit_mitigation_bullet(riskpoint_node, mitigation)

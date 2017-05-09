@@ -22,7 +22,6 @@ sys.excepthook = info
 
 levels_count = dict()
 nodes_lookup = dict()
-fixups_queue = list()
 objective_node = None
 
 
@@ -317,220 +316,42 @@ def derive_evita_risks(this_node, objective_node):
 	these_attrs.update({'evita_sr': get_evita_security_risk_level(objective_attrs.get('evita_ss'), these_attrs.get('evita_apt'))})
 	return
 
-def do_children_firstpass(node):
-	for child in get_node_children(node):
-		do_node_firstpass(child)
-	return
-
-def do_node_firstpass(node):
-	global nodes_lookup
-
-	do_children_firstpass(node)
-
-	node_title = node.get('title', '')
-
-	if node_title == 'AND':
-		return
-
-	if node_title == '...':
-		return
-
-	if is_node_a_reference(node):
-		return
-
-	if nodes_lookup.get(node_title, None) is None:
-		nodes_lookup.update({node_title: node})
-
-	return
-
-def get_node_referent_title(node):
-	title = node.get('title', '')
-
-	if '(*)' in node.get('title'):
-		wip_referent_title = title.replace('(*)','').strip()
-	else:
-		referent_coords = re.search(r'\((\d+\..*?)\)', title).groups()[0]
-		wip_referent_title = "%s %s" % (referent_coords, re.sub(r'\(\d+\..*?\)', '', title).strip())
-	return wip_referent_title
-
-def is_node_a_reference(node):
-	title = node.get('title', '')
-
-	return (not title.find('(*)') == -1) or (not re.search(r'\(\d+\..*?\)', title) is None)
-
-def is_node_weigthed(node):
-	apt = get_node_apt(node)
-	return (not apt is None) and (not math.isnan(apt)) and (not math.isinf(apt))
-
-def update_node_apt(node, apt):
-	if node.get('attr', None) is None:
-		node.update({'attr': dict()})
-
-	node.get('attr').update({'evita_apt': apt})
-	return
-
-def pos_infs_of_children(node):
-	for child in get_node_children(node):
-		if get_node_apt(child) == float('-inf'):
-			update_node_apt(child, float('inf'))
-
-def neg_infs_of_children(node):
-	for child in get_node_children(node):
-		if get_node_apt(child) == float('inf'):
-			update_node_apt(child, float('-inf'))
-
-def get_max_apt_of_children(node):
-	child_maximum = float('-inf')
-
-	for child in get_node_children(node):
-		child_maximum = max(child_maximum, get_node_apt(child))
-	
-	return child_maximum
-
-def get_min_apt_of_children(node):
-	child_minimum = float('inf')
-
-	for child in get_node_children(node):
-		child_minimum = min(child_minimum, get_node_apt(child))
-
-	return child_minimum
-
-def get_node_apt(node):
-	return node.get('attr', dict()).get('evita_apt', None)
-
-def do_children_secondpass(node, nodes_context):
-	for child in get_node_children(node):
-		do_node_secondpass(child, nodes_context)
-	return
-
-objective_context = None
-
-def do_node_secondpass(node, nodes_context):
-	global nodes_lookup
-	global fixups_queue
-	global objective_context
-
-	if is_node_weigthed(node):
-		return
-
-	if is_objective(node):
-	    objective_context = None
-
-	update_node_apt(node, float('nan'))
-
-	if is_node_a_reference(node):
-		node_referent = get_node_referent(node, nodes_lookup)
-		node_referent_title=get_node_title(node_referent)
-
-		if (not get_node_apt(node_referent) is None) and (math.isnan(get_node_apt(node_referent))):
-			#is referent in-progress? then we have a loop. update the reference node with the identity of the tree reduction operation and return
-			update_node_apt(node, float('-inf'))
-		else:
-			#otherwise, descend through referent's children
-
-			#do all on the referent and copy the node apt back
-			do_node_secondpass(node_referent, nodes_context)
-
-			update_node_apt(node,get_node_apt(node_referent))
-	else:
-		if is_attack_vector(node):
+def set_node_apts(node):
+	def evita_rap_apt_parser_deriver(node):
+		if is_attack_vector(node) and (not is_node_a_reference(node)):
 			parse_evita_raps(node)
 			derive_evita_apt(node)
 			if not is_outofscope(node):
 				append_evita_rap_table(node)
-		elif is_mitigation(node):
-			update_node_apt(node, 0)
-		elif not is_outofscope(node):
-			nodes_context.append(get_node_title(node))
-			do_children_secondpass(node, nodes_context)
-			nodes_context.pop()
-
-			if node.get('title', None) == 'AND':
-				pos_infs_of_children(node)
-				update_node_apt(node, get_min_apt_of_children(node))
-			else:
-				neg_infs_of_children(node)
-				update_node_apt(node, get_max_apt_of_children(node))
-
-	if (not is_mitigation(node)) and (not is_objective(node)) and (not objective_context is None) and math.isinf(get_node_apt(node)):
-		fixups_queue.append(node)
-
-	if is_objective(node):
-	    objective_context = None
-
-	return
-
-def do_fixups(nodes_context):
-    global fixups_queue
-    fixups_len = len(fixups_queue)
-
-    while len(fixups_queue) > 0:
-	fixups_this_time = list(fixups_queue)
-	fixups_queue = list()
-	for node in fixups_this_time:
-		do_node_secondpass(node, nodes_context)
+		return
 	
-	if len(fixups_queue) >= fixups_len:
-		raise ValueError("ERROR couldn't resolve remaining infs %s" % fixups_queue)
-		break
-	else:
-		fixups_len = len(fixups_queue)
-
-def do_children_thirdpass(node, nodes_context):
-    for child in get_node_children(node):
-	do_node_thirdpass(child, nodes_context)
-    return
-
-def do_node_thirdpass(node, nodes_context):
-	global nodes_lookup
-	global fixups_queue
-
-	if (not is_attack_vector(node)) and (not is_mitigation(node)):
-		nodes_context.append(get_node_title(node))
-		do_children_thirdpass(node, nodes_context)
-		nodes_context.pop()
-
-		if node.get('title', None) == 'AND':
-			pos_infs_of_children(node)
-			update_node_apt(node, get_min_apt_of_children(node))
-		else:
-			neg_infs_of_children(node)
-			update_node_apt(node, get_max_apt_of_children(node))
-
+	apply_each_node_below_objectives(node, evita_rap_apt_parser_deriver)
 	return
 
-def do_children_severitiespass(node, nodes_context):
-	for child in get_node_children(node):
-		do_node_severitiespass(child, nodes_context)
-	return
-
-def do_node_severitiespass(node, nodes_context):
+def set_node_severities(node, nodes_context):
 	if is_objective(node) and not is_outofscope(node):
 		parse_evita_severities(node)
 		append_evita_severity_table(node)
 
-	do_children_severitiespass(node, nodes_context)
-	return
-
-def do_children_riskspass(node, nodes_context):
 	for child in get_node_children(node):
-		do_node_riskspass(child, nodes_context)
+	    set_node_severities(child, nodes_context)
 	return
 
-def do_node_riskspass(node, nodes_context):
+def derive_node_risks(node, nodes_context):
 	global nodes_lookup
 	global objective_node
 
 	saved_objective = objective_node
 	if is_objective(node):
 		objective_node = node
+		apt_propagator(node)
 
 	if is_riskpoint(node) and (not is_outofscope(node)):
 		derive_evita_risks(node, objective_node)
 		return
 
-	node.get('attr').pop('evita_apt')
-	do_children_riskspass(node, nodes_context)
+	for child in get_node_children(node):
+	    derive_node_risks(child, nodes_context)
 	objective_node = saved_objective
 
 if args.mupin is None:
@@ -554,13 +375,14 @@ if 'id' in data and data['id'] == 'root':
 else:
 	root_node = data
 
-do_children_firstpass(root_node)
-do_node_severitiespass(root_node, nodes_context)
+nodes_lookup = build_nodes_lookup(root_node)
+
+set_node_severities(root_node, nodes_context)
+
 if not args.only_severities:
-    do_node_secondpass(root_node, nodes_context)
-    do_fixups(nodes_context)
-    do_node_thirdpass(root_node, nodes_context)
-    do_node_riskspass(root_node, nodes_context)
+	set_node_apts(root_node)
+	propagate_all_the_apts(root_node, nodes_lookup)
+	derive_node_risks(root_node, nodes_context)
 
 str = json.dumps(data, indent=2, sort_keys=True)
 str = re.sub(r'\s+$', '', str, 0, re.M)

@@ -2,6 +2,7 @@ from collections import OrderedDict
 import html2text
 from bs4 import BeautifulSoup
 import re
+import math
 
 text_maker = html2text.HTML2Text()
 text_maker.body_width = 0 #disable random line-wrapping from html2text
@@ -69,6 +70,51 @@ def apply_each_node(root, fn):
 		apply_each_node(child, fn)
 	fn(root)
 
+	return
+
+def apply_each_node_below_objectives(root, fn):
+	objectives = list()
+	def objectives_collector(node):
+		if is_objective(node):
+			objectives.append(node)
+		return
+	apply_each_node(root, objectives_collector)
+
+	for objective in objectives:
+		for child in get_node_children(objective):
+			apply_each_node(child, fn)
+
+	return
+
+def do_each_once_with_deref(node, parent, fn, nodes_lookup):
+	if node.get('done', False):
+		return
+
+	node.update({'inprogress': True})
+
+	if is_node_a_reference(node):
+		node_referent = get_node_referent(node, nodes_lookup)
+
+		if not node_referent.get('inprogress', False):
+			do_each_once_with_deref(node_referent, parent, fn, nodes_lookup)
+	else:
+		if not is_node_a_leaf(node):
+			for child in get_node_children(node):
+				do_each_once_with_deref(child, node, fn, nodes_lookup)
+
+		if not node.get('done', False):
+			node.update({'done': True})
+			fn(node, parent)
+
+	node.update({'inprogress': False})
+	return
+
+def clear_once_with_deref(node):
+	for child in get_node_children(node):
+		clear_once_with_deref(child)
+
+	node.update({'inprogress': False})
+	node.update({'done': False})
 	return
 
 def build_nodes_lookup(root):
@@ -177,4 +223,135 @@ def get_node_referent(node, nodes_lookup):
 	else:
 		return node_referent
 
+def is_node_weigthed(node):
+	apt = get_node_apt(node)
+	return (not apt is None) and (not math.isnan(apt)) and (not math.isinf(apt))
 
+
+def update_node_apt(node, apt):
+	if node.get('attr', None) is None:
+		node.update({'attr': dict()})
+
+	node.get('attr').update({'evita_apt': apt})
+	return
+
+def pos_infs_of_children(node):
+	for child in get_node_children(node):
+		if get_node_apt(child) == float('-inf'):
+			update_node_apt(child, float('inf'))
+
+def neg_infs_of_children(node):
+	for child in get_node_children(node):
+		if get_node_apt(child) == float('inf'):
+			update_node_apt(child, float('-inf'))
+
+def get_max_apt_of_children(node):
+	child_maximum = float('-inf')
+
+	for child in get_node_children(node):
+		if is_mitigation(child) or is_outofscope(child):
+			continue
+		child_maximum = max(child_maximum, get_node_apt(child))
+	
+	return child_maximum
+
+def get_min_apt_of_children(node):
+	child_minimum = float('inf')
+
+	for child in get_node_children(node):
+		if is_mitigation(child) or is_outofscope(child):
+		    continue
+		child_minimum = min(child_minimum, get_node_apt(child))
+
+	return child_minimum
+
+def get_node_apt(node):
+	return node.get('attr', dict()).get('evita_apt', None)
+
+def apt_propagator(node):
+	if (not is_attack_vector(node)) and (not is_mitigation(node)):
+		if node.get('title', None) == 'AND':
+			pos_infs_of_children(node)
+			update_node_apt(node, get_min_apt_of_children(node))
+		else:
+			neg_infs_of_children(node)
+			update_node_apt(node, get_max_apt_of_children(node))
+	return
+
+def do_propagate_apt_without_deref(node):
+	apply_each_node_below_objectives(node, apt_propagator)
+	return
+
+def do_propagate_apt_with_deref(node, nodes_lookup):
+	if is_node_weigthed(node):
+		return
+
+	update_node_apt(node, float('nan'))
+
+	if is_node_a_reference(node):
+		node_referent = get_node_referent(node, nodes_lookup)
+		node_referent_title=get_node_title(node_referent)
+
+		if (not get_node_apt(node_referent) is None) and (math.isnan(get_node_apt(node_referent))):
+			#is referent in-progress? then we have a loop. update the reference node with the identity of the tree reduction operation and return
+			update_node_apt(node, float('-inf'))
+		else:
+			#otherwise, descend through referent's children
+
+			#do all on the referent and copy the node apt back
+			do_propagate_apt_with_deref(node_referent, nodes_lookup)
+
+			update_node_apt(node, get_node_apt(node_referent))
+	else:
+		for child in get_node_children(node):
+			do_propagate_apt_with_deref(child, nodes_lookup)
+		
+		apt_propagator(node)
+	return
+
+def do_count_fixups_needed(root_node):
+	count = 0
+	def fixups_counter(node):
+		if (not is_mitigation(node)) and math.isinf(get_node_apt(node)):
+			count = count + 1
+		return
+
+	apply_each_node_below_objectives(root_node, fixups_counter)
+	return count
+
+def do_fixup_apt(root_node):
+	fixups_len = do_count_fixups_needed(root_node)
+
+	def fixer_upper(node):
+		if (not is_mitigation(node)) and math.isinf(get_node_apt(node)):
+			do_propagate_apt_without_deref(node)
+		return
+
+	while fixups_len > 0:
+		apply_each_node_below_objectives(root_node, fixer_upper)
+
+		fixups_len_this_time = do_count_fixups_needed(root_node)
+		if fixups_len_this_time >= fixups_len:
+			fixups_needed = list()
+			def fixups_collector(node):
+				if (not is_mitigation(node)) and math.isinf(get_node_apt(node)):
+					fixups_needed.append(node)
+				return
+			apply_each_node_below_objectives(root_node, fixups_collector)
+			raise ValueError("ERROR couldn't resolve remaining infs %s" % fixups_needed)
+			break
+		else:
+			fixups_len = fixups_len_this_time
+	return
+
+# TODO function for clearing all propagated APTs
+
+def propagate_all_the_apts(root_node, nodes_lookup):
+	def propagtor_closure(node):
+		do_propagate_apt_with_deref(node, nodes_lookup)
+	apply_each_node_below_objectives(root_node, propagtor_closure)
+	# fixup by doing propagation withough fixup on outstanding -infs
+	do_fixup_apt(root_node)
+	#propagate one last time for good measure
+	do_propagate_apt_without_deref(root_node)
+	return
