@@ -355,3 +355,30 @@ def propagate_all_the_apts(root_node, nodes_lookup):
 	#propagate one last time for good measure
 	do_propagate_apt_without_deref(root_node)
 	return
+
+evita_security_risk_table=[
+	[0,0,0,0,0],
+	[0,0,1,2,3],
+	[0,1,2,3,4],
+	[1,2,3,4,5],
+	[2,3,4,5,6]
+]
+
+def get_evita_security_risk_level(non_safety_severity, combined_attack_probability):
+	global evita_security_risk_table
+
+	if non_safety_severity < 0 or non_safety_severity > 4:
+		raise ValueError('encountered an invalid non-safety severity', non_safety_severity)
+	return evita_security_risk_table[int(non_safety_severity)][int(combined_attack_probability)-1]
+
+def derive_evita_risks(this_node, objective_node):
+	these_attrs = this_node.get('attr')
+	objective_attrs = objective_node.get('attr')
+
+	these_attrs.update({'evita_fr': get_evita_security_risk_level(objective_attrs.get('evita_fs'), these_attrs.get('evita_apt'))})
+	these_attrs.update({'evita_or': get_evita_security_risk_level(objective_attrs.get('evita_os'), these_attrs.get('evita_apt'))})
+	these_attrs.update({'evita_pr': get_evita_security_risk_level(objective_attrs.get('evita_ps'), these_attrs.get('evita_apt'))})
+	these_attrs.update({'evita_sr': get_evita_security_risk_level(objective_attrs.get('evita_ss'), these_attrs.get('evita_apt'))})
+	return
+
+
