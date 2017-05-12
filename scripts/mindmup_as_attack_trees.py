@@ -20,6 +20,10 @@ def remove_child(parent, node):
 def is_node_a_leaf(node):
 	return len(get_node_children(node)) == 0
 
+def node_has_description(node):
+	has_description = len(get_description(node).strip()) > 0
+	return has_description
+
 def get_node_title(node):
 	return node.get('title', '')
 
@@ -95,9 +99,22 @@ def apply_each_node_below_objectives(root, fn):
 	return
 
 def do_each_once_with_deref(node, parent, fn, nodes_lookup):
-	if node.get('done', False):
+	breadcrumbs = list()
+	def breadcrumber(node, parent):
+		breadcrumbs.append(node)
+		fn(node, parent)
 		return
 
+	__do_each_once_with_deref(node, parent, breadcrumber, nodes_lookup)
+
+	for node in breadcrumbs:
+		clear_once_with_deref(node)
+	
+	return
+
+def __do_each_once_with_deref(node, parent, fn, nodes_lookup):
+	if node.get('done', False):
+		return
 	node.update({'inprogress': True})
 
 	if is_node_a_reference(node):
@@ -108,7 +125,7 @@ def do_each_once_with_deref(node, parent, fn, nodes_lookup):
 	else:
 		if not is_node_a_leaf(node):
 			for child in get_node_children(node):
-				do_each_once_with_deref(child, node, fn, nodes_lookup)
+				__do_each_once_with_deref(child, node, fn, nodes_lookup)
 
 		if not node.get('done', False):
 			node.update({'done': True})
@@ -117,12 +134,9 @@ def do_each_once_with_deref(node, parent, fn, nodes_lookup):
 	node.update({'inprogress': False})
 	return
 
-def clear_once_with_deref(node):
-	for child in get_node_children(node):
-		clear_once_with_deref(child)
-
-	node.update({'inprogress': False})
-	node.update({'done': False})
+def clear_once_with_deref(root_node):
+	root_node.update({'inprogress': False})
+	root_node.update({'done': False})
 	return
 
 def build_nodes_lookup(root):
@@ -244,18 +258,18 @@ def update_node_apt(node, apt):
 	return
 
 def get_node_apt(root_node):
-	override_apt = None
+	override_apt = list()
 	def last_overide_getter(node):
 		value = get_override_apt(node)
 		if not value is None:
-			override_apt = value
+			override_apt.append(value)
 		return
 	apply_each_node(root_node, last_overide_getter)
 
-	if override_apt is None:
+	if len(override_apt) == 0:
 		return root_node.get('attr', dict()).get('evita_apt', None)
 	else:
-		return override_apt
+		return override_apt[0]
 
 def remove_node_apt(node):
 	if not node.get('attr', None) is None:
@@ -499,7 +513,7 @@ def derive_mitigation_impact(root_node, nodes_lookup, mitigation_list, initial_r
 				title = get_node_referent_title(node)
 
 			if title == mitigation_title:
-				set_override_apt(node, 0)
+				set_override_apt(node, 1)
 			return
 		apply_each_node(root_node, apt_overrider)
 

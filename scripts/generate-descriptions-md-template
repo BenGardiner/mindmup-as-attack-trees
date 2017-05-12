@@ -137,7 +137,7 @@ def add_label(depth, cuts, node):
 		print_other_headings(node, level, working_title, description)
 	else:
 		#check for description
-		has_description = len(description.strip()) > 0
+		has_description = node_has_description(node)
 		#check for intermediate mitigations
 		mitigations_list = list()
 		for child in get_node_children(node):
@@ -253,11 +253,8 @@ def emit_list_of_mitigations(node):
 			#build a reference-like title
 			title = get_node_reference_title(target_node).replace("Mitigation: ",'')
 
-			#print bullet for title and indented group for description (if any)
+			#print bullet for title -- no description here, these will be emitted in subsections specifically for the mitigation (later parts of the report)
 			print("* %s\n" % title)
-
-			for line in get_description(target_node).splitlines():
-				print("    %s\n" % line)
 	return
 
 def add_graphic(node, title):
