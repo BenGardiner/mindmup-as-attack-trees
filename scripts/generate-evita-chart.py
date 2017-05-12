@@ -81,8 +81,9 @@ def emit_attackvector_row(riskpoint_node, node):
 	))
 	return
 
-def emit_mitigation_bullet(riskpoint_node, mitigation_title):
-	print("\n* %s" % mitigation_title)
+def emit_mitigation_bullet(mitigation):
+	mitigation_title = get_node_title(mitigation)
+	print("\n* %s" % mitigation_title.replace("Mitigation: ",''))
 
 def do_each_attackvector(node, nodes_context, nodes_lookup):
 	def collect_attack_vectors(node, parent):
@@ -99,48 +100,60 @@ def do_each_attackvector(node, nodes_context, nodes_lookup):
 	clear_once_with_deref(node)
 	return
 
-def do_each_mitigation(node, nodes_lookup):
-	def collect_mitigations(node, parent):
-		global mitigation_collection
-		global riskpoint_node
-
+def collect_unique_mitigations(root_node, nodes_lookup):
+	mitigations_table = dict()
+	def collect_mitigations_by_title(node, parent):
 		if not is_mitigation(node):
 		    return
 
 		target_node = node
 		if is_node_a_reference(target_node):
 		    target_node = get_node_referent(target_node)
-		mitigation_title = get_node_reference_title(target_node).replace("Mitigation: ",'')
+		mitigation_title = get_node_reference_title(target_node)
 
-		#TODO
-		if mitigation_collection.get(mitigation_title, None) is None:
-		    mitigation_collection.update({ mitigation_title: dict() })
+		if mitigations_table.get(mitigation_title, None) is None:
+		    mitigations_table.update({ mitigation_title: target_node })
 
-		mitigation_collection.get(mitigation_title).update({ get_node_title(parent) : parent.get('attr').get('evita_apt') })
 		return
 
-	do_each_once_with_deref(node, None, collect_mitigations, nodes_lookup)
+	do_each_once_with_deref(root_node, None, collect_mitigations_by_title, nodes_lookup)
+	clear_once_with_deref(root_node)
+	return mitigations_table.values()
+
+def collect_mitigation_to_vector_table(node, nodes_lookup):
+	mitigation_to_vector_table = dict()
+	def collect_mitigation_to_vector(node, parent):
+		if not is_mitigation(node):
+		    return
+
+		target_node = node
+		if is_node_a_reference(target_node):
+		    target_node = get_node_referent(target_node)
+		mitigation_title = get_node_reference_title(target_node)
+
+		if mitigation_to_vector_table.get(mitigation_title, None) is None:
+		    mitigation_to_vector_table.update({ mitigation_title: dict() })
+
+		mitigation_to_vector_table.get(mitigation_title).update({ get_node_title(parent) : parent.get('attr').get('evita_apt') })
+		return
+
+	do_each_once_with_deref(node, None, collect_mitigation_to_vector, nodes_lookup)
 	clear_once_with_deref(node)
-	return
+	return mitigation_to_vector_table
 
 def do_each_riskpoint(node, nodes_context, nodes_lookup):
-	global riskpoint_node
-	global mitigation_collection
-	global root_node
-
+	riskpoint_node = None
 	if is_riskpoint(node):
 		print("\n\n| Attack Method | Safety Risk | Privacy Risk | Financial Risk | Operational Risk | Combined Attack Probability |")
 		print("|-----------------|-------------|--------------|----------------|------------------|-----------------------------|")
 		riskpoint_node = node
 		emit_riskpoint_row(riskpoint_node)
 
-		print("\n\n The following is a list of all mitigations recommended in the context of this attacker objective. There is no specific priority of the mitigations ascribed to the ordering here.")
-		#collect all the mitigations, their riskpoints and all attack vectors to which the mitigation can be applied
-		do_each_mitigation(node, nodes_lookup)
+		print("\n\n The following is a list of all mitigations recommended in the context of this attacker objective. They are sorted by their global risk impact score (as above), highest impact first.")
+		mitigations = collect_unique_mitigations(node, nodes_lookup)
 
-		for mitigation,vectors in mitigation_collection.iteritems():
-			emit_mitigation_bullet(riskpoint_node, mitigation)
-
+		for mitigation in mitigations:
+			emit_mitigation_bullet(mitigation)
 
 	if not is_node_a_leaf(node):
 		for child in get_node_children(node):
@@ -170,17 +183,30 @@ objective_node = None
 riskpoint_node = None
 
 propagate_all_the_apts(root_node, nodes_lookup)
-derive_node_risks(root_node, nodes_context)
+derive_node_risks(root_node)
+initial_risks_table = build_risks_table(root_node)
+#garnish_apts(root_node)
 
-global mitigation_collection
-#mitigation_collection = OrderedDict(dict(), key=lambda (k,v): v.get('total_risk')*100 + v.get('max_attack_probability'))
-mitigation_collection = dict()
+all_mitigations = collect_unique_mitigations(root_node, nodes_lookup)
+for mitigation in all_mitigations:
+	risk_impact_score = derive_mitigation_impact(root_node, nodes_lookup, [ mitigation ], initial_risks_table)
+	if mitigation.get('attr', None) is None:
+		mitigation.update({ 'attr', dict() })
+	mitigation.get('attr').update({'risk_impact_score': risk_impact_score})
 
-print("\n\n# EVITA Risk Analysis: Mitigations Collections")
+all_mitigations=sorted(all_mitigations, key=lambda t: float(t.get('attr').get('risk_impact_score')))
+
+print("\n\n# EVITA Risk Analysis: Mitigations List")
+
+#TODO: emit a table summarizing the risk impact scores
+for mitigation in all_mitigations:
+	print("\n## %s" % get_node_title(mitigation))
+	print("\n%s" % get_description(mitigation))
+
+print("\n\n# EVITA Risk Analysis: Per Objective Mitigation Lists")
 for objective in objectives:
 	if not is_outofscope(objective):
-		print("\n\n### Mitigations for %s" % get_node_title(objective))
+		print("\n\n### Mitigations for Attacker Objective Node %s" % get_node_title(objective))
 		objective_node = objective
 		do_each_riskpoint(objective, nodes_context, nodes_lookup)
-		mitigation_collection.clear()
 

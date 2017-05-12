@@ -72,14 +72,18 @@ def apply_each_node(root, fn):
 
 	return
 
-def collect_objectives(root):
-	objectives = list()
-	def objectives_collector(node):
-		if is_objective(node):
-			objectives.append(node)
+def collect_all(root_node, predicate):
+	res = list()
+	def collector(node):
+		if predicate(node):
+			res.append(node)
 		return
-	apply_each_node(root, objectives_collector)
+	apply_each_node(root_node, collector)
 
+	return res
+
+def collect_objectives(root_node):
+	objectives = collect_all(root_node, is_objective)
 	return objectives
 
 def apply_each_node_below_objectives(root, fn):
@@ -239,6 +243,42 @@ def update_node_apt(node, apt):
 	node.get('attr').update({'evita_apt': apt})
 	return
 
+def get_node_apt(root_node):
+	override_apt = None
+	def last_overide_getter(node):
+		value = get_override_apt(node)
+		if not value is None:
+			override_apt = value
+		return
+	apply_each_node(root_node, last_overide_getter)
+
+	if override_apt is None:
+		return root_node.get('attr', dict()).get('evita_apt', None)
+	else:
+		return override_apt
+
+def remove_node_apt(node):
+	if not node.get('attr', None) is None:
+		if not node.get('attr').get('evita_apt') is None:
+			node.get('attr').pop('evita_apt')
+	return
+
+def get_override_apt(node):
+	return node.get('attr', dict()).get('override_apt', None)
+
+def set_override_apt(node, value):
+	if node.get('attr', None) is None:
+		node.update({'attr': dict()})
+
+	node.get('attr').update({'override_apt': value})
+	return
+
+def remove_override_apt(node):
+	if not node.get('attr', None) is None:
+		if not node.get('attr').get('override_apt') is None:
+			node.get('attr').pop('override_apt')
+	return
+
 def pos_infs_of_children(node):
 	for child in get_node_children(node):
 		if get_node_apt(child) == float('-inf'):
@@ -269,9 +309,6 @@ def get_min_apt_of_children(node):
 
 	return child_minimum
 
-def get_node_apt(node):
-	return node.get('attr', dict()).get('evita_apt', None)
-
 def apt_propagator(node):
 	if (not is_attack_vector(node)) and (not is_mitigation(node)):
 		if node.get('title', None) == 'AND':
@@ -283,6 +320,7 @@ def apt_propagator(node):
 	return
 
 def do_propagate_apt_without_deref(node):
+	#NB: works because apply_each_... does al leaves first
 	apply_each_node_below_objectives(node, apt_propagator)
 	return
 
@@ -311,6 +349,15 @@ def do_propagate_apt_with_deref(node, nodes_lookup):
 			do_propagate_apt_with_deref(child, nodes_lookup)
 		
 		apt_propagator(node)
+	return
+
+def garnish_apts(root_node):
+	def apt_garnisher(node):
+		if not is_attack_vector(node):
+			remove_node_apt(node)
+		return
+
+	apply_each_node(root_node, apt_garnisher)
 	return
 
 def do_count_fixups_needed(root_node):
@@ -348,8 +395,6 @@ def do_fixup_apt(root_node):
 			fixups_len = fixups_len_this_time
 	return
 
-# TODO function for clearing all propagated APTs
-
 def propagate_all_the_apts(root_node, nodes_lookup):
 	def propagtor_closure(node):
 		do_propagate_apt_with_deref(node, nodes_lookup)
@@ -375,14 +420,46 @@ def get_evita_security_risk_level(non_safety_severity, combined_attack_probabili
 		raise ValueError('encountered an invalid non-safety severity', non_safety_severity)
 	return evita_security_risk_table[int(non_safety_severity)][int(combined_attack_probability)-1]
 
+def build_risks_table(root_node):
+	risks_table = dict()
+
+	def risks_builder(node):
+		if is_riskpoint(node) and (not is_outofscope(node)):
+			title = get_node_title(node)
+			objective_attrs = node.get('attr')
+			risks = dict()
+
+			risks.update({'evita_fr': objective_attrs.get('evita_fr')})
+			risks.update({'evita_or': objective_attrs.get('evita_or')})
+			risks.update({'evita_pr': objective_attrs.get('evita_pr')})
+			risks.update({'evita_sr': objective_attrs.get('evita_sr')})
+
+			risks_table.update({title: risks})
+		return
+
+	apply_each_node(root_node, risks_builder)
+	return risks_table
+
+#TODO: scaled difference the risks
+def score_risk_impact(original_table, this_table):
+	score = 0
+
+	for title, risks in this_table.iteritems():
+		for risk_key, risk_value in risks.iteritems():
+			that = original_table.get(title).get(risk_key)
+			score = score + ( (that - risk_value) * that )
+
+	return score
+
 def derive_evita_risks(this_node, objective_node):
 	these_attrs = this_node.get('attr')
 	objective_attrs = objective_node.get('attr')
+	objective_apt = these_attrs.get('evita_apt')
 
-	these_attrs.update({'evita_fr': get_evita_security_risk_level(objective_attrs.get('evita_fs'), these_attrs.get('evita_apt'))})
-	these_attrs.update({'evita_or': get_evita_security_risk_level(objective_attrs.get('evita_os'), these_attrs.get('evita_apt'))})
-	these_attrs.update({'evita_pr': get_evita_security_risk_level(objective_attrs.get('evita_ps'), these_attrs.get('evita_apt'))})
-	these_attrs.update({'evita_sr': get_evita_security_risk_level(objective_attrs.get('evita_ss'), these_attrs.get('evita_apt'))})
+	these_attrs.update({'evita_fr': get_evita_security_risk_level(objective_attrs.get('evita_fs'), objective_apt)})
+	these_attrs.update({'evita_or': get_evita_security_risk_level(objective_attrs.get('evita_os'), objective_apt)})
+	these_attrs.update({'evita_pr': get_evita_security_risk_level(objective_attrs.get('evita_ps'), objective_apt)})
+	these_attrs.update({'evita_sr': get_evita_security_risk_level(objective_attrs.get('evita_ss'), objective_apt)})
 	return
 
 def final_propagate_up_to_objectives(root_node):
@@ -394,7 +471,7 @@ def final_propagate_up_to_objectives(root_node):
 	apply_each_node(root_node, final_propagator)
 	return
 
-def derive_node_risks(root_node, nodes_context):
+def derive_node_risks(root_node):
 	final_propagate_up_to_objectives(root_node)
 
 	objective_node = None
@@ -408,3 +485,28 @@ def derive_node_risks(root_node, nodes_context):
 
 	apply_each_node(root_node, derivor)
 	return
+
+def derive_mitigation_impact(root_node, nodes_lookup, mitigation_list, initial_risks_table):
+	garnish_apts(root_node)
+	apply_each_node(root_node, remove_override_apt)
+
+	for mitigation in mitigation_list:
+		mitigation_title = get_node_title(mitigation)
+		#set 'override_apt' the mitigation node and also any references
+		def apt_overrider(node):
+			title = get_node_title(node)
+			if is_node_a_reference(node):
+				title = get_node_referent_title(node)
+
+			if title == mitigation_title:
+				set_override_apt(node, 0)
+			return
+		apply_each_node(root_node, apt_overrider)
+
+	propagate_all_the_apts(root_node, nodes_lookup)
+	derive_node_risks(root_node)
+	this_risks_table = build_risks_table(root_node)
+
+	#difference/'score' this_risks_table
+	return score_risk_impact(initial_risks_table, this_risks_table)
+
