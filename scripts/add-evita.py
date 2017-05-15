@@ -339,6 +339,9 @@ set_node_severities(root_node, nodes_context)
 
 if not args.only_severities:
 	set_node_apts(root_node)
+	apply_each_node(root_node, remove_override_apt)
+	propagate_all_the_apts(root_node, nodes_lookup)
+	derive_node_risks(root_node)
 
 str = json.dumps(data, indent=2, sort_keys=True)
 str = re.sub(r'\s+$', '', str, 0, re.M)

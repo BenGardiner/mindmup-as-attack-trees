@@ -342,6 +342,9 @@ def do_propagate_apt_with_deref(node, nodes_lookup):
 	if is_node_weigthed(node):
 		return
 
+	if is_mitigation(node):
+		return
+
 	update_node_apt(node, float('nan'))
 
 	if is_node_a_reference(node):
@@ -375,14 +378,14 @@ def garnish_apts(root_node):
 	return
 
 def do_count_fixups_needed(root_node):
-	count = 0
+	fixups = list()
 	def fixups_counter(node):
 		if (not is_mitigation(node)) and math.isinf(get_node_apt(node)):
-			count = count + 1
+			fixups.append(node)
 		return
 
 	apply_each_node_below_objectives(root_node, fixups_counter)
-	return count
+	return len(fixups)
 
 def do_fixup_apt(root_node):
 	fixups_len = do_count_fixups_needed(root_node)
@@ -403,6 +406,7 @@ def do_fixup_apt(root_node):
 					fixups_needed.append(node)
 				return
 			apply_each_node_below_objectives(root_node, fixups_collector)
+			#FIXME: don't unconditionally throw an error here.
 			raise ValueError("ERROR couldn't resolve remaining infs %s" % fixups_needed)
 			break
 		else:
@@ -478,7 +482,7 @@ def derive_evita_risks(this_node, objective_node):
 
 def final_propagate_up_to_objectives(root_node):
 	def final_propagator(node):
-		if is_objective(node):
+		if is_objective(node) and (not is_outofscope(node)):
 			apt_propagator(node)
 		return
 

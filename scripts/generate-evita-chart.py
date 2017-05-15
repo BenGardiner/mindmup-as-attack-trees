@@ -179,6 +179,8 @@ objectives = collect_objectives(root_node)
 objective_node = None
 riskpoint_node = None
 
+garnish_apts(root_node)
+apply_each_node(root_node, remove_override_apt)
 propagate_all_the_apts(root_node, nodes_lookup)
 derive_node_risks(root_node)
 initial_risks_table = build_risks_table(root_node)
