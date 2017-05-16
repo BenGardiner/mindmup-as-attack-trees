@@ -232,7 +232,7 @@ def print_other_headings(node, level, title, description):
 		#TODO
 		#print("\n%s Attack Threat" % ('#' * (level+1)))
 		print
-	if args.mitigations_as_nodes:
+	if args.mitigations_as_nodes and (not is_outofscope(node)):
 		children = get_node_children(node)
 		print("\n%s Mitigation%s Required\n" % ('#' * (level+1), "" if len(children) <= 1 else "s"))
 		if len(children) == 0:
