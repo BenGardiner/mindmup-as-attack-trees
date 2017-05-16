@@ -137,7 +137,6 @@ def add_label(depth, cuts, node):
 		print_title_headings_for_attack_vector_node(level, working_title)
 		print_other_headings(node, level, working_title, description)
 	else:
-		#check for description
 		has_description = node_has_description(node)
 		#check for intermediate mitigations
 		mitigations_list = list()
@@ -156,7 +155,6 @@ def add_label(depth, cuts, node):
 			level = 2
 			print("\n%s Mitigation%s Required\n" % ('#' * (level+1), "" if len(mitigations_list) <= 1 else "s"))
 			emit_list_of_mitigations(node)
-
 
 	if (not is_collapsed(node)) and (not is_attack_vector(node)):
 		emit_only_attacker_methods_section(depth, cuts, node)
@@ -299,7 +297,22 @@ def do_tops():
 
 		print_title_headings_for_goal_node(heading_level, title)
 		add_graphic(node, title)
-		print("\n%s" % get_description(node))
+
+		has_description = node_has_description(node)
+
+		mitigations_list = list()
+		for child in get_node_children(node):
+			if is_mitigation(child):
+				mitigations_list.append(child)
+		has_mitigations = len(mitigations_list)
+
+		if has_description:
+			print("\n%s" % get_description(node))
+
+		if has_mitigations:
+			level = 2
+			print("\n%s Mitigation%s Required\n" % ('#' * (level+1), "" if len(mitigations_list) <= 1 else "s"))
+			emit_list_of_mitigations(node)
 
 		emit_only_attacker_methods_section(depth, cuts, node)
 	return
