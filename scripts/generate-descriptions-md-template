@@ -127,6 +127,9 @@ def add_label(depth, cuts, node):
 	if is_node_a_reference(node):
 		return
 
+	if is_mitigation(node):
+		return
+
 	description = get_description(node)
 	working_title = node.get('title', None)
 
