@@ -266,7 +266,14 @@ def resolve_all_text_node_references(description, nodes_lookup):
 		referent_node = nodes_lookup.get(reference, None)
 		if not referent_node is None:
 			sys.stderr.write('resolving description reference: %s\n' % reference)
-			description = re.sub(r'\*(%s) \(\*\)\*' % re.escape(reference), r'*\1 (%s)*' % referent_node.get('coords'), description)
+			if not referent_node.get('coords') is None:
+				coords = referent_node.get('coords')
+			else:
+				title = get_node_title(referent_node)
+				parsed_title = re.match(r'(\d+\..*?)\s(.*?)$',title).groups()
+				coords = parsed_title[0]
+
+			description = re.sub(r'\*(%s) \(\*\)\*' % re.escape(reference), r'*\1 (%s)*' % coords, description)
 		else:
 			sys.stderr.write('warning not resolving description reference: %s\n' % reference)
 	
