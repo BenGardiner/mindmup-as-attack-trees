@@ -53,6 +53,19 @@ def is_outofscope(node):
 def is_collapsed(node):
 	return node.get('attr', dict()).get('collapsed', False)
 
+def is_cut(node, cuts):
+	title = node.get('title','')
+	for cut in cuts:
+		if cut.endswith('.'):
+			match_pattern='%s'
+		else:
+			match_pattern='%s '
+
+		if title.startswith(match_pattern % cut):
+			return True
+	
+	return is_objective(node) or is_subtree(node)
+
 def is_all_children(node, predicate):
 	for child in get_node_children(node):
 		if not predicate(child):

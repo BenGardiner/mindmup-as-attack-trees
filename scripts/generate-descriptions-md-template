@@ -73,35 +73,12 @@ def emit_tree_snapshot(title, node):
 	f1.close()
 	return
 
-def do_ideas(depth, cuts, node):
-	count = 1
-	for value in get_node_children(node):
-		add_label(depth+1, cuts, value)
-		count = count+1
-	return
-
-def is_cut(node, cuts):
-	title = node.get('title','')
-	for cut in cuts:
-		if cut.endswith('.'):
-			match_pattern='%s'
-		else:
-			match_pattern='%s '
-
-		if title.startswith(match_pattern % cut):
-			return True
-	
-	return is_objective(node) or is_subtree(node)
-
-def add_label(depth, cuts, node):
-	global tops
-	global seconds
-
-	working_title = node.get('title', None)
+def emit_only_attacker_objective_section(cuts, node, tops, seconds):
 	if is_cut(node, cuts):
 		if is_objective(node):
 			#emit the full description
 			level = 2
+			working_title = node.get('title', None)
 			parsed_title = re.match(r'(\d+\..*?)\s(.*?)$',working_title).groups()
 			print("\n\n%s Attacker Objective Node %s (%s)" % ( ('#' * level, parsed_title[1], parsed_title[0])))
 			description = get_description(node)
@@ -116,21 +93,42 @@ def add_label(depth, cuts, node):
 		else:
 			tops.append(node)
 		return
+
+	for child in get_node_children(node):
+		emit_only_attacker_objective_section(cuts, child, tops, seconds)
+
+	return
+
+def emit_only_attacker_methods_section(depth, cuts, node):
+	count = 1
+	for value in get_node_children(node):
+		add_label(depth+1, cuts, value)
+		count = count+1
+	return
+
+def add_label(depth, cuts, node):
+	global tops
+	global seconds
+
+	if is_cut(node, cuts):
+		tops.append(node)
+		return
 	else:
 		level = 2
 
 	if node.get('title', None) == 'AND':
-		do_ideas(depth, cuts, node)
+		emit_only_attacker_methods_section(depth, cuts, node)
 		return
 
 	if node.get('title', None) == '...':
-		do_ideas(depth, cuts, node)
+		emit_only_attacker_methods_section(depth, cuts, node)
 		return
 
 	if is_node_a_reference(node):
 		return
 
 	description = get_description(node)
+	working_title = node.get('title', None)
 
 	if is_attack_vector(node):
 		print_title_headings_for_attack_vector_node(level, working_title)
@@ -158,7 +156,7 @@ def add_label(depth, cuts, node):
 
 
 	if (not is_collapsed(node)) and (not is_attack_vector(node)):
-		do_ideas(depth, cuts, node)
+		emit_only_attacker_methods_section(depth, cuts, node)
 	return
 
 def print_title_headings_for_goal_node(level,title):
@@ -281,13 +279,18 @@ def do_tops():
 		add_graphic(node, title)
 		print("\n%s" % get_description(node))
 
-		do_ideas(depth, cuts, node)
+		for child in get_node_children(node):
+			emit_only_attacker_objective_section(cuts, child, tops, seconds)
+
 
 	print("\n\n%s Attack Trees: Attacker Methods Etc." % ('#' * 1))
 	print("\n In the attack tree analysis, the attacker methods follow from the objectives and these methods give rise to (many) attack vectors.\n\nIn the sections that follow we will examine the attack methods (the immediate children of the objectives) and the attack paths that can lead to an attacker successfully completing them.")
 
-	while len(seconds) > 0:
-		node = seconds.pop(0)
+	while len(tops) > 0 or len(seconds) > 0:
+		if len(tops) > 0:
+			node = tops.pop(0)
+		else:
+			node = seconds.pop(0)
 
 		title = get_node_title(node)
 
@@ -295,7 +298,7 @@ def do_tops():
 		add_graphic(node, title)
 		print("\n%s" % get_description(node))
 
-		do_ideas(depth, cuts, node)
+		emit_only_attacker_methods_section(depth, cuts, node)
 	return
 
 fd_in = open(args.input, 'r')
