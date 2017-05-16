@@ -1,3 +1,4 @@
+import sys
 from collections import OrderedDict
 import html2text
 from bs4 import BeautifulSoup
@@ -257,6 +258,19 @@ def get_node_referent(node, nodes_lookup):
 		return node
 	else:
 		return node_referent
+
+def resolve_all_text_node_references(description, nodes_lookup):
+	matches = re.findall(r'\*[^\s*]+(?:\s+[^\s*]+)* \(\*\)\s*\*',description)
+	for match in matches:
+		reference = re.sub(r'\*(.*?) \(\*\)\*', r'\1', match).strip()
+		referent_node = nodes_lookup.get(reference, None)
+		if not referent_node is None:
+			sys.stderr.write('resolving description reference: %s\n' % reference)
+			description = re.sub(r'\*(%s) \(\*\)\*' % re.escape(reference), r'*\1 (%s)*' % referent_node.get('coords'), description)
+		else:
+			sys.stderr.write('warning not resolving description reference: %s\n' % reference)
+	
+	return description
 
 def is_node_weigthed(node):
 	apt = get_node_apt(node)

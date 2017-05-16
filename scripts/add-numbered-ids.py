@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from mindmup_as_attack_trees import *
 
 import sys,json
 import re
@@ -13,16 +14,6 @@ sys.excepthook = info
 levels_count = dict()
 nodes_lookup = dict()
 
-def is_node_a_reference(node):
-	node_title = node.get('title', '')
-	return (not node_title.find('(*)') == -1)
-
-def get_node_referent_title(node):
-	return node.get('title', '').replace('(*)','').strip()
-
-def get_node_children(node):
-	return OrderedDict(sorted(node.get('ideas', dict()).iteritems(), key=lambda t: float(t[0]))).values()
-
 def do_ideas(depth, node):
 	global levels_count
 
@@ -32,22 +23,6 @@ def do_ideas(depth, node):
 	for key, value in iter(sorted(node.get('ideas', dict()).iteritems(), key=lambda t: float(t[0]))):
 		add_label(depth+1, value)
 	return
-
-def get_raw_description(node):
-	#prefer the mindmup 2.0 'note' to the 1.0 'attachment'
-	description = node.get('attr', dict()).get('note', dict()).get('text', '')
-	if description is '':
-		description = node.get('attr', dict()).get('attachment', dict()).get('content', '')
-
-	return description
-
-def set_raw_description(node, new_description):
-	#prefer the mindmup 2.0 'note' to the 1.0 'attachment'
-	description = node.get('attr', dict()).get('note', dict()).get('text', '')
-	if not description is '':
-		node.get('attr').get('note').update({'text': new_description})
-	else:
-		node.get('attr', dict()).get('attachment', dict()).update({'content': new_description})
 
 def add_label(depth, node):
 	global levels_count
@@ -102,16 +77,10 @@ def process_secondpass(node):
 		node.update({'title': working_title})
 
 	description = get_raw_description(node)
-	matches = re.findall(r'\*[^\s*]+(?:\s+[^\s*]+)* \(\*\)\s*\*',description)
-	for match in matches:
-	    reference = re.sub(r'\*(.*?) \(\*\)\*', r'\1', match).strip()
-	    referent_node = nodes_lookup.get(reference, None)
-	    if not referent_node is None:
-		print('resolving description reference: %s' % reference)
-		description = re.sub(r'\*(%s) \(\*\)\*' % re.escape(reference), r'*\1 (%s)*' % referent_node.get('coords'), description)
-		set_raw_description(node, description)
-	    else:
-		print('warning not resolving description reference: %s' % reference)
+
+	description = resolve_all_text_node_references(description, nodes_lookup)
+
+	update_raw_description(node, description)
 	return
 
 def foreach_node_thirdpass(node):
