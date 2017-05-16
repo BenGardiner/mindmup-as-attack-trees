@@ -249,7 +249,6 @@ def is_node_weigthed(node):
 	apt = get_node_apt(node)
 	return (not apt is None) and (not math.isnan(apt)) and (not math.isinf(apt))
 
-
 def update_node_apt(node, apt):
 	if node.get('attr', None) is None:
 		node.update({'attr': dict()})
@@ -527,4 +526,38 @@ def derive_mitigation_impact(root_node, nodes_lookup, mitigation_list, initial_r
 
 	#difference/'score' this_risks_table
 	return score_risk_impact(initial_risks_table, this_risks_table)
+
+def get_risk_label(evita_risk):
+	evita_risk = int(evita_risk)
+	if evita_risk == 0:
+		return "R0"
+	elif evita_risk == 1:
+		return "R1"
+	elif evita_risk == 2:
+		return "R2"
+	elif evita_risk == 3:
+		return "R3"
+	elif evita_risk == 4:
+		return "R4"
+	elif evita_risk == 5:
+		return "R5"
+	elif evita_risk == 6:
+		return "R6"
+	else:
+		return "unknown"
+
+def get_probability_label(evita_probability):
+	if evita_probability == 1:
+		return "1 Remote"
+	elif evita_probability == 2:
+		return "2 Unlikely"
+	elif evita_probability == 3:
+		return "3 Unlikely"
+	elif evita_probability == 4:
+		return "4 Likely"
+	elif evita_probability == 5:
+		return "5 Highly Likely"
+	else:
+		return "unknown"
+
 
