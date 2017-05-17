@@ -340,7 +340,7 @@ def get_max_apt_of_children(node):
 	child_maximum = float('-inf')
 
 	for child in get_node_children(node):
-		if is_mitigation(child) or is_outofscope(child):
+		if is_mitigation(child):
 			continue
 		child_maximum = max(child_maximum, get_node_apt(child))
 	
@@ -350,7 +350,7 @@ def get_min_apt_of_children(node):
 	child_minimum = float('inf')
 
 	for child in get_node_children(node):
-		if is_mitigation(child) or is_outofscope(child):
+		if is_mitigation(child):
 		    continue
 		child_minimum = min(child_minimum, get_node_apt(child))
 
