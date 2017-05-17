@@ -439,7 +439,6 @@ def do_fixup_apt(root_node):
 					fixups_needed.append(node)
 				return
 			apply_each_node_below_objectives(root_node, fixups_collector)
-			#FIXME: don't unconditionally throw an error here.
 			raise ValueError("ERROR couldn't resolve remaining infs %s" % fixups_needed)
 			break
 		else:
