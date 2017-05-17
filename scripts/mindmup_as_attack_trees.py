@@ -413,7 +413,7 @@ def garnish_apts(root_node):
 def do_count_fixups_needed(root_node):
 	fixups = list()
 	def fixups_counter(node):
-		if (not is_mitigation(node)) and math.isinf(get_node_apt(node)):
+		if (not is_mitigation(node)) and (not is_objective(node)) and math.isinf(get_node_apt(node)):
 			fixups.append(node)
 		return
 
