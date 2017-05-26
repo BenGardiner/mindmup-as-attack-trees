@@ -47,10 +47,11 @@ def do_node_firstpass(node):
 	if (not is_node_a_reference(node)) and is_attack_vector(node) and get_raw_description(node).find('EVITA::') == -1:
 		print("ERROR attack vector node w/o (complete) description text: %s" % node_title)
 
+	if (not is_node_a_reference(node)) and is_attack_vector(node) and (not get_raw_description(node).find('EVITA:: |0|0|0|0|0|0|0|0|0') == -1) and (not is_outofscope(node)):
+		print("ERROR attack vector node is in-scope and has trivial RAP: %s" % node_title)
+
 	if is_objective(node) and (not is_outofscope(node)) and get_raw_description(node).find('EVITA::') == -1:
 		print("ERROR Objective node w/o EVITA:: marker: %s" % node_title)
-
-	#TODO ERROR Node with labeled (Out of Scope) without EVITA:: *inf*
 
 	#TODO WARNING Node with expliciti (Out of Scope) label
 
