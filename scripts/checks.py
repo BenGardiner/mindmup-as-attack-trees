@@ -218,19 +218,24 @@ nodes_context=list()
 
 if 'id' in data and data['id'] == 'root':
 	#version 2 mindmup
-	do_children_firstpass(data['ideas']['1'])
-	do_node_secondpass(data['ideas']['1'], nodes_context)
-	top_weight = get_node_weight(data['ideas']['1'])
-	#TODO check for any leftover infs and fix 'em
-	do_fixups(nodes_context)
-	do_node_checkinfs(data['ideas']['1'], nodes_context)
+	root_node = data['ideas']['1']
 else:
-	do_children_firstpass(data)
-	do_node_secondpass(data, nodes_context)
-	top_weight = get_node_weight(data)
-	#TODO check for any leftover infs and fix 'em
-	do_fixups(nodes_context)
-	do_node_checkinfs(data, nodes_context)
+	root_node = data
+
+def remove_hidden(node):
+	for child in get_node_children(node):
+		if get_node_title(child) == '.hidden':
+			remove_child(node, child)
+	return
+
+apply_each_node(root_node, remove_hidden)
+
+do_children_firstpass(root_node)
+do_node_secondpass(root_node, nodes_context)
+top_weight = get_node_weight(root_node)
+#TODO check for any leftover infs and fix 'em
+do_fixups(nodes_context)
+do_node_checkinfs(root_node, nodes_context)
 
 if top_weight != 0:
 	print("ERROR: weights not propagated correctly through tree. Expecting 0. Got %s" % top_weight)
