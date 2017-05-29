@@ -191,7 +191,7 @@ def get_evita_ss_label(node):
 	elif ss == 3:
 		return "S%s Life threatening (survival uncertain) or fatal injuries; severe injuries for multiple vehicles" % ss
 	elif ss == 4:
-		return "S%s Life threatening or fatal in-juries for multiple vehicles" % ss
+		return "S%s Life threatening or fatal injuries for multiple vehicles" % ss
 	else:
 		return "%d unknown" % ss
 
