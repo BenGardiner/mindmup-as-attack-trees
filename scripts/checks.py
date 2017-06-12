@@ -58,7 +58,7 @@ def do_node_firstpass(node):
 	if is_objective(node) and (not is_outofscope(node)) and get_raw_description(node).find('EVITA::') == -1:
 		print("ERROR Objective node w/o EVITA:: marker: %s" % node_title)
 
-	#TODO WARNING Node with expliciti (Out of Scope) label
+	#TODO WARNING Node with explicit (Out of Scope) label
 
 	#TODO ERROR OBJECTIVE Node without EVITA
 
@@ -69,7 +69,7 @@ def do_node_firstpass(node):
 	#TODO Warn on reference to non subtree-root node (to ensure that re-used nodes are sufficiently abstracted to be their own section
 	return
 
-def is_node_weigthed(node):
+def is_node_weighted(node):
 	weight = get_node_weight(node)
 	return (not weight is None) and (not math.isnan(weight)) and (not math.isinf(weight))
 
@@ -120,7 +120,7 @@ def do_node_secondpass(node, nodes_context):
 	global fixups_queue
 	global objective_context
 
-	if is_node_weigthed(node):
+	if is_node_weighted(node):
 		return
 
 	update_node_weight(node, float('nan'))
