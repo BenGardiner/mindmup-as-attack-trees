@@ -29,7 +29,7 @@
 ### Suggested Mitigation
 
 
-## Attack Description: Node 2.2 Replace Output with Constant Value ('Pinning')
+## Attack Description: Node 2.2 Replace Output With Constant Value ('Pinning')
 
 ### Attack Classification
 
@@ -56,7 +56,7 @@
 ### Suggested Mitigation
 
 
-# Attack Description: Node 2.0 Replace Output with Constant Value ('Pinning')
+# Attack Description: Node 2.0 Replace Output With Constant Value ('Pinning')
 
 ![2.0 Replace Output with Constant Value ('Pinning') tree snapshot](2.0 Replace Output with Constant Value ('Pinning').png)
 
@@ -76,7 +76,7 @@
 ### Suggested Mitigation
 
 
-## Attack Description: Node 3.1 Tamper with Client-of-RNG Code
+## Attack Description: Node 3.1 Tamper With Client-of-RNG Code
 
 ### Attack Classification
 
@@ -85,7 +85,7 @@
 ### Suggested Mitigation
 
 
-## Attack Description: Node 3.2 (Generally) Tamper with RNG data
+## Attack Description: Node 3.2 (Generally) Tamper With RNG Data
 
 ### Attack Classification
 
@@ -94,7 +94,7 @@
 ### Suggested Mitigation
 
 
-## Attack Description: Node 4.0 Continuous RNG state reset
+## Attack Description: Node 4.0 Continuous RNG State Reset
 
 ### Attack Classification
 
@@ -141,7 +141,7 @@
 ### Suggested Mitigation
 
 
-## Attack Description: Node 3.5 Guessing known Sequence from Observed Output
+## Attack Description: Node 3.5 Guessing Known Sequence From Observed Output
 
 ### Attack Classification
 
@@ -159,7 +159,7 @@
 ### Suggested Mitigation
 
 
-## Attack Description: Node 5.1 Infer next values from observations
+## Attack Description: Node 5.1 Infer Next Values From Observations
 
 ### Attack Classification
 

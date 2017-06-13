@@ -161,7 +161,7 @@ def do_node_secondpass(node, nodes_context):
 				print("ERROR None propagating through weights at node: %s" % get_node_title(node))
 			else:
 				if math.isnan(get_node_weight(node)):
-					print("ERROR NaN propagting through weights at node: %s (%s)" % (get_node_title(node),nodes_context))
+					print("ERROR NaN propagating through weights at node: %s (%s)" % (get_node_title(node),nodes_context))
 
 	if (not is_mitigation(node)) and (not is_outofscope(node)) and (not objective_context is None) and math.isinf(get_node_weight(node)):
 		fixups_queue.append(node)
