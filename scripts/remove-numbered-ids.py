@@ -8,6 +8,22 @@ def do_ideas(node):
 		trim_label(value)
 	return
 
+def get_raw_description(node):
+	#prefer the mindmup 2.0 'note' to the 1.0 'attachment'
+	description = node.get('attr', dict()).get('note', dict()).get('text', '')
+	if description is '':
+		description = node.get('attr', dict()).get('attachment', dict()).get('content', '')
+
+	return description
+
+def set_raw_description(node, new_description):
+	#prefer the mindmup 2.0 'note' to the 1.0 'attachment'
+	description = node.get('attr', dict()).get('note', dict()).get('text', '')
+	if not description is '':
+		node.get('attr').get('note').update({'text': new_description})
+	else:
+		node.get('attr', dict()).get('attachment', dict()).update({'content': new_description})
+
 def trim_label(node):
 	do_ideas(node)
 
@@ -20,7 +36,15 @@ def trim_label(node):
 	if not node.get('title', '').find('(*)') == -1:
 		return
 
-	node.update({'title': re.sub(r'^\d\..*?\s','',node.get('title', ''))})
+	title = node.get('title', '')
+	title = re.sub(r'^\d+\..*?\s', '', title)
+	title = re.sub(r'\(\d+\..*?\)', '(*)', title)
+
+	description = get_raw_description(node)
+	description = re.sub(r'\*(.*?) \(\d+\.\d+\)\*', r'*\1 (*)*', description)
+	set_raw_description(node, description)
+
+	node.update({'title': title})
 	return
 
 if len(sys.argv) < 1:
@@ -36,8 +60,18 @@ else:
 	fd_in.close()
 	fd_out=open(sys.argv[1],'w')
 
-do_ideas(data)
-fd_out.write(json.dumps(data, indent=2, sort_keys=True))
+
+if 'id' in data and data['id'] == 'root':
+	#version 2 mindmup
+	do_ideas(data['ideas']['1'])
+else:
+	do_ideas(data)
+
+str = json.dumps(data, indent=2, sort_keys=True)
+str = re.sub(r'\s+$', '', str, 0, re.M)
+str = re.sub(r'\s+$', '', str, flags=re.M)
+
+fd_out.write(str)
 
 if len(sys.argv) >= 1:
 	fd_out.close()

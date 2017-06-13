@@ -1,8 +1,18 @@
 #!/usr/bin/env python
+from mindmup_as_attack_trees import *
 
 import sys,json
+import re
+from collections import OrderedDict
+import ipdb
+
+def info(type, value, tb):
+    ipdb.pm()
+
+sys.excepthook = info
 
 levels_count = dict()
+nodes_lookup = dict()
 
 def do_ideas(depth, node):
 	global levels_count
@@ -16,24 +26,72 @@ def do_ideas(depth, node):
 
 def add_label(depth, node):
 	global levels_count
+	global nodes_lookup
 
 	do_ideas(depth, node)
+	node_title = node.get('title', '')
 
-	if node.get('title', None) == 'AND':
+	if node_title.strip() == 'AND':
 		return
 
-	if node.get('title', None) == '...':
+	if node_title == '...':
 		return
 
-	if not node.get('title', '').find('(*)') == -1:
+	if is_node_a_reference(node):
 		return
 
-	working_title = "%s.%s %s" % (depth, levels_count[depth], node.get('title', None))
+	node.update({'coords': "%s.%s" % (depth, levels_count[depth])})
+
+	if nodes_lookup.get(node_title, None) is None:
+		nodes_lookup.update({node_title: node})
 
 	levels_count[depth] += 1
+	return
+
+def foreach_node_secondpass(node):
+	for child in get_node_children(node):
+		process_secondpass(child)
+	return
+
+def process_secondpass(node):
+	global nodes_lookup
+
+	foreach_node_secondpass(node)
+	node_title = node.get('title', '')
+
+	if node_title == 'AND':
+		return
+
+	if node_title == '...':
+		return
+
+	working_title = node.get('title', '')
+	if is_node_a_reference(node):
+		referent_node = nodes_lookup.get(get_node_referent_title(node), None)
+		working_title = working_title.replace('(*)', '')
+		working_title = "%s(%s)" % (working_title, referent_node.get('coords'))
+	else:
+		working_title = "%s %s" % (node.get('coords'), working_title)
 
 	if not node.get('title', None).startswith(working_title):
 		node.update({'title': working_title})
+
+	description = get_raw_description(node)
+
+	description = resolve_all_text_node_references(description, nodes_lookup)
+
+	update_raw_description(node, description)
+	return
+
+def foreach_node_thirdpass(node):
+	for child in get_node_children(node):
+		process_thirdpass(child)
+	return
+
+def process_thirdpass(node):
+	foreach_node_thirdpass(node)
+
+	node.pop('coords', None)
 	return
 
 depth=0
@@ -53,11 +111,19 @@ else:
 
 if 'id' in data and data['id'] == 'root':
 	#version 2 mindmup
-	do_ideas(depth, data['ideas']['1'])
+	root_node = data['ideas']['1']
 else:
-	do_ideas(depth, data)
+	root_node = data
 
-fd_out.write(json.dumps(data, indent=2, sort_keys=True))
+do_ideas(depth, root_node)
+foreach_node_secondpass(root_node)
+foreach_node_thirdpass(root_node)
+
+str = json.dumps(data, indent=2, sort_keys=True)
+str = re.sub(r'\s+$', '', str, 0, re.M)
+str = re.sub(r'\s+$', '', str, flags=re.M)
+
+fd_out.write(str)
 
 if len(sys.argv) >= 1:
 	fd_out.close()

@@ -1,17 +1,33 @@
 #!/usr/bin/env python
 
+from mindmup_as_attack_trees import *
 import sys,json
 import copy
-import html2text
-from bs4 import BeautifulSoup
+import re
+import ipdb
+import argparse
+parser = argparse.ArgumentParser()
 
-text_maker = html2text.HTML2Text()
-text_maker.body_width = 0 #disable random line-wrapping from html2text
+def info(type, value, tb):
+	ipdb.pm()
+#sys.excepthook = info
+
+parser.add_argument("--for-pandoc", action='store_true', help="generate markdown destined for pandoc, disables pandoc-specific markdown tricks. When not specified, the output is tailored for github.")
+parser.add_argument("input", help="the mindmup file that will be processed to create the markdown text body")
+parser.add_argument('--cuts', nargs='+', help='specify a list of nodes (by title string match) where the tree should be cut-up while rendering', required=False)
+parser.add_argument("--only-objectives", action='store_true', help="only generate markdown for the attacker objectives, not the rest of the tree")
+parser.add_argument("--no-attack-classification", action='store_true', help="don't emit the sometimes noisy 'attack classification' sections for the attack vectors")
+parser.add_argument("--auto-attack-threat", action='store_true', help="create attack threat summaries automatically based on the attacker objective nodes and ignore the text in the node bodies")
+parser.add_argument("--mitigations-as-nodes", action='store_true', help="mitigations are separate nodes in this attack tree, search for them and collate them to create the sections for the report")
+args = parser.parse_args()
 
 tops = list()
+seconds = list()
 
 def truncate(node, cuts, first):
-	if not first and is_cut(node.get('title',''), cuts) and 'ideas' in node:
+	if not first and is_cut(node, cuts) and 'ideas' in node:
+		reference_title = get_node_reference_title(node)
+		node.update({ 'title': reference_title })
 		if not 'attr' in node:
 			node.update({'attr': dict()})
 		node['attr'].update({'collapsed': True})
@@ -21,93 +37,141 @@ def truncate(node, cuts, first):
 
 	return node
 
+def get_safe_filename(notsafe):
+	safe = notsafe.replace("?", "_").replace("/", "_").replace(",", "_").replace('\'','_').replace('(','_').replace(')','_').replace('  ', ' ')
+	return safe[:200] if len(safe) > 200 else safe
+
+def remove_mitigations(node):
+	def mitigations_remover(node):
+		for child in get_node_children(node):
+			if is_mitigation(child):
+				remove_child(node, child)
+		return
+
+	apply_each_node(node, mitigations_remover)
+	return
+
 def emit_tree_snapshot(title, node):
 	global cuts
 	global resources
 
 	truncated = truncate(copy.deepcopy(node), cuts, True)
+	remove_mitigations(truncated)
 
 	#TODO: include also the 'theme' from the graphic
 	if not resources is None:
 		truncated.update({'resources': resources})
 
-	truncated.update({'attr' : { 'theme': 'straightlines'}})
+	if truncated.get('attr', None) is None:
+		truncated.update({'attr': dict()})
+	truncated.get('attr').update({ 'theme': 'straightlines'})
 
-	title = title.replace("?", "_")
+	title = get_safe_filename(title)
 
 	f1 = open('%s.mup' % title, 'w')
 	f1.write(json.dumps(truncated))
 	f1.close()
 	return
 
-def do_ideas(depth, cuts, node):
+def emit_only_attacker_objective_section(cuts, node, tops, seconds):
+	if is_cut(node, cuts):
+		if is_objective(node):
+			#emit the full description
+			level = 2
+			working_title = node.get('title', None)
+			parsed_title = re.match(r'(\d+\..*?)\s(.*?)$',working_title).groups()
+			print("\n\n%s Attacker Objective Node %s (%s)" % ( ('#' * level, parsed_title[1], parsed_title[0])))
+			description = get_description(node)
+			print("\n%s" % description)
+			#deep copy node
+			#change node description to "This objective's severity and other details are covered in section *Attack Objective Node %s*, above. Please see that section for more details. In this section we will examine the Attacker Methods and intermediate nodes below it down to the attack vectors in detail.
+			if not is_outofscope(node):
+				new_node = copy.deepcopy(node)
+				update_raw_description(new_node, "This objective's severity and other details are covered in section *Attacker Objective Node %s*, above. Please see that section for more details. In this section we will examine the Attacker Methods and intermediate nodes below it down to the attack vectors in detail." % working_title)
+				if not args.only_objectives: # don't bother descending the tree in --only-objectives
+					seconds.append(new_node)
+		else:
+			tops.append(node)
+		return
+
+	for child in get_node_children(node):
+		emit_only_attacker_objective_section(cuts, child, tops, seconds)
+
+	return
+
+def emit_only_attacker_methods_section(depth, cuts, node):
 	count = 1
-	for key, value in iter(sorted(node.get('ideas', dict()).iteritems(), key=lambda (k,v): (float(k),v) )):
+	for value in get_node_children(node):
 		add_label(depth+1, cuts, value)
 		count = count+1
 	return
 
-def is_cut(title, cuts):
-	for cut in cuts:
-		if cut.endswith('.'):
-			match_pattern='%s'
-		else:
-			match_pattern='%s '
-
-		if title.startswith(match_pattern % cut):
-			return True
-	
-	return False
-
 def add_label(depth, cuts, node):
 	global tops
+	global seconds
 
-	working_title = node.get('title', None)
-	if is_cut(working_title, cuts):
+	if is_cut(node, cuts):
 		tops.append(node)
 		return
 	else:
 		level = 2
 
 	if node.get('title', None) == 'AND':
-		do_ideas(depth, cuts, node)
+		emit_only_attacker_methods_section(depth, cuts, node)
 		return
 
 	if node.get('title', None) == '...':
-		do_ideas(depth, cuts, node)
+		emit_only_attacker_methods_section(depth, cuts, node)
 		return
 
-	if not node.get('title', '').find('(*)') == -1:
-		do_ideas(depth, cuts, node)
+	if is_node_a_reference(node):
+		return
+
+	if is_mitigation(node):
 		return
 
 	description = get_description(node)
+	working_title = node.get('title', None)
 
-	if len(node.get('ideas', dict())) > 0:
-		if len(description.strip()) > 0:
-			print_title_headings_for_intermediate_node(level, working_title)
-			print("\n%s" % description)
-	else:
+	if is_attack_vector(node):
 		print_title_headings_for_attack_vector_node(level, working_title)
-		print_other_headings(level, working_title, description)
+		print_other_headings(node, level, working_title, description)
+	else:
+		has_description = node_has_description(node)
+		#check for intermediate mitigations
+		mitigations_list = list()
+		for child in get_node_children(node):
+			if is_mitigation(child):
+				mitigations_list.append(child)
+		has_mitigations = len(mitigations_list)
+		
+		if has_description or has_mitigations:
+			print_title_headings_for_intermediate_node(level, working_title)
 
-	collapsed = node.get('attr', dict()).get('collapsed', False)
-	if not collapsed:
-		do_ideas(depth, cuts, node)
+		if has_description:
+			print("\n%s" % description)
+
+		if has_mitigations:
+			level = 2
+			print("\n%s Mitigation%s Required\n" % ('#' * (level+1), "" if len(mitigations_list) <= 1 else "s"))
+			emit_list_of_mitigations(node)
+
+	if (not is_collapsed(node)) and (not is_attack_vector(node)):
+		emit_only_attacker_methods_section(depth, cuts, node)
 	return
 
 def print_title_headings_for_goal_node(level,title):
-	print("\n\n%s Goal Description: Node %s" % ('#' * (level), title ))
+	print("\n\n%s Subtree %s" % ('#' * (level), title ))
 
 def print_title_headings_for_intermediate_node(level,title):
-	print("\n\n%s Intermediate Goal Description: Node %s" % ('#' * (level), title ))
+	print("\n\n%s Intermediate Node %s" % ('#' * (level), title ))
 
 def print_title_headings_for_attack_vector_node(level,title):
-	print("\n\n%s Attack Description: Node %s" % ('#' * (level), title ))
+	print("\n\n%s Attack Vector Node %s" % ('#' * (level), title ))
 
-
-def print_other_headings(level, title, description):
+def print_other_headings(node, level, title, description):
 	global evita_tags
+	global nodes_lookup
 
 	description_lines = description.splitlines()
 
@@ -115,34 +179,41 @@ def print_other_headings(level, title, description):
 	threat_heading_found=False
 	mitigation_heading_found=False
 	previous_blank=False
+	suppress_this_subsection=False
+
+	if is_outofscope(node):
+		#don't emit the 'missing' sections for out of scope nodes
+		classification_heading_found=True
+		threat_heading_found=True
+		mitigation_heading_found=True
+
 	for description_line in description_lines:
 		if "# Attack Classification".lower() in description_line.lower() or description_line.strip().lower().endswith("Attack Classification:".lower()):
 			classification_heading_found=True
 			previous_blank=True
-			print("\n%s Attack Classification" % ('#' * (level+1)))
+			suppress_this_subsection=False
+			if not args.no_attack_classification:
+				print("\n%s Attack Classification" % ('#' * (level+1)))
+			else:
+				suppress_this_subsection=True
 		elif "# Attack Threat".lower() in description_line.lower() or description_line.strip().lower().endswith("Attack Threat:".lower()):
 			threat_heading_found=True
 			previous_blank=True
-			print("\n%s Attack Threat" % ('#' * (level+1)))
+			suppress_this_subsection=False
+			if not args.auto_attack_threat:
+				print("\n%s Attack Threat" % ('#' * (level+1)))
+			else:
+				suppress_this_subsection=True
 		elif "# Mitigation Required".lower() in description_line.lower() or description_line.strip().lower().replace("mitigations","mitigation").endswith("Mitigation Required:".lower()):
 			mitigation_heading_found=True
 			previous_blank=True
-			print("\n%s Mitigation Required" % ('#' * (level+1)))
-		elif "EVITA:: " in description_line:
-			evita_line = description.split('|')
-			evita_tag = dict()
-			evita_tag['Node'] = title
-			evita_tag['FS'] = int(evita_line[1])
-			evita_tag['OS'] = int(evita_line[2])
-			evita_tag['PS'] = int(evita_line[3])
-			evita_tag['SS'] = int(evita_line[4])
-			evita_tag['ET'] = int(evita_line[5])
-			evita_tag['E']  = int(evita_line[6])
-			evita_tag['K']  = int(evita_line[7])
-			evita_tag['WO'] = int(evita_line[8])
-			evita_tag['EQ'] = int(evita_line[9])
-			evita_tags.append(evita_tag)
+			suppress_this_subsection=False
+			if not args.mitigations_as_nodes:
+				print("\n%s Mitigation Required" % ('#' * (level+1)))
+			else:
+				suppress_this_subsection=True
 		elif description_line.strip().lower().endswith("Description:".lower()):
+			suppress_this_subsection=False
 			continue # skip Description: lines, all lines are emitted under a 'Attack Description' heading
 		elif description_line.strip() == "":
 			if not previous_blank:
@@ -150,123 +221,109 @@ def print_other_headings(level, title, description):
 				previous_blank=True
 			continue # skip blank lines
 		else:
-			print(description_line)
-			previous_blank=False
+			if not suppress_this_subsection:
+				print(description_line)
+				previous_blank=False
 
-	
-	if not classification_heading_found:
+	if not classification_heading_found and not args.no_attack_classification:
 		print("\n%s Attack Classification" % ('#' * (level+1)))
-	if not threat_heading_found:
-		print("\n%s Attack Threat" % ('#' * (level+1)))
-	if not mitigation_heading_found:
-		print("\n%s Mitigation Required" % ('#' * (level+1)))
+	if args.auto_attack_threat:
+		#TODO
+		#print("\n%s Attack Threat" % ('#' * (level+1)))
+		print
+	if args.mitigations_as_nodes and (not is_outofscope(node)):
+		children = get_node_children(node)
+		print("\n%s Mitigation%s Required\n" % ('#' * (level+1), "" if len(children) <= 1 else "s"))
+		if len(children) == 0:
+			print("\nNo mitigations are highlighted for this particular attack vector; the effective mitigations against attacks of the system will be on other conjunctive (AND) nodes in the attack trees.")
+		else:
+			emit_list_of_mitigations(node)
+
+	return
+
+def emit_list_of_mitigations(node):
+	for child in get_node_children(node):
+		if is_mitigation(child):
+			#deref any references
+			target_node = child
+			if is_node_a_reference(target_node):
+				target_node = get_node_referent(target_node, nodes_lookup)
+
+			#build a reference-like title
+			title = get_node_reference_title(target_node).replace("Mitigation: ",'')
+
+			#print bullet for title -- no description here, these will be emitted in subsections specifically for the mitigation (later parts of the report)
+			print("* %s\n" % title)
+	return
 
 def add_graphic(node, title):
 	emit_tree_snapshot(title, node)
-	print("\n![%s tree snapshot](%s.png)" % (title, title.replace("?", "_")))
-
-def detect_html(text):
-	return bool(BeautifulSoup(text, "html.parser").find())
-
-def get_description(node):
-	global text_maker
-
-	#prefer the mindmup 2.0 'note' to the 1.0 'attachment'
-	description = node.get('attr', dict()).get('note', dict()).get('text', '')
-	if description is '':
-		description = node.get('attr', dict()).get('attachment', dict()).get('content', '')
-
-	if detect_html(description):
-		description = text_maker.handle(description)
-	
-	return description
+	print("\n![*%s Attack Subtree*](%s.png)%s" % (title, get_safe_filename(title), "{ width=100% }" if args.for_pandoc else ""))
 
 def do_tops():
 	global tops
+	global seconds
 	global cuts
 
 	depth = 0
 	heading_level = 1
 
+	print("\n%s Attack Trees: Attacker Objectives" % ('#' * 1))
+	print("\n In the attack tree analysis, the attacker objectives are the top level attacker goals where both the motivations of the attacker and the impacts on the organization are understood.\n\nIn the sections that follow we will enumerate the attacker objectives discovered during the investigations of the target systems. These objectives will be considered in groups, as subtrees, for the purpose of sharing context of impact. We will highlight objectives which were considered out of scope for the analysis and, finally, we will also state the severities ascribed to each of the in-scope attacker objectives.")
+
 	while len(tops) > 0:
 		node = tops.pop(0)
-		title = node.get('title', '')
+
+		title = get_node_title(node)
 
 		print_title_headings_for_goal_node(heading_level, title)
 		add_graphic(node, title)
-		description = get_description(node)
-		print("\n%s" % description)
+		print("\n%s" % get_description(node))
 
-		do_ideas(depth, cuts, node)
+		for child in get_node_children(node):
+			emit_only_attacker_objective_section(cuts, child, tops, seconds)
 
-evita_security_risk_table=[
-	[0,0,0,0,0],
-	[0,0,1,2,3],
-	[0,1,2,3,4],
-	[1,2,3,4,5],
-	[2,3,4,5,6]
-]
-def get_evita_security_risk_level(non_safety_severity, combined_attack_probability):
-	global evita_security_risk_table
 
-	if non_safety_severity < 0 or non_safety_severity > 4:
-		raise ValueError('encountered an invalid non-safety severity', non_safety_severity)
-	return evita_security_risk_table[non_safety_severity][combined_attack_probability-1]
+	print("\n\n%s Attack Trees: Attacker Methods Etc." % ('#' * 1))
+	print("\n In the attack tree analysis, the attacker methods follow from the objectives and these methods give rise to (many) attack vectors.\n\nIn the sections that follow we will examine the attack methods (the immediate children of the objectives) and the attack paths that can lead to an attacker successfully completing them.")
 
-def do_evita(evita_tags):
-	if len(evita_tags) < 1:
-		return
-
-	print("\n\n# EVITA Chart\n The following is the EVITA chart for the above tree.\n")
-	print("Node | **FS** | **OS** | **PS** | **SS** | **ET** | **E** | **K** | **WO** | **EQ** | **APT** | **AP** | **CO** | **FR** | **OR** | **PR** | **SR**")
-	print("----|---|---|---|---|----|---|---|----|----|-----|----|----|---|---|---|---")
-
-	for evita_tag in evita_tags:
-		evita_tag['APT'] = evita_tag['ET'] + evita_tag['E'] + evita_tag['K'] + evita_tag['WO'] + evita_tag['EQ']
-		if evita_tag['APT'] < 0:
-			raise ValueError('encountered negative Attack Potential Total (APT)', evita_tag)
-		elif evita_tag['APT'] < 10:
-			evita_tag['AP'] = 5
-		elif evita_tag['APT'] < 14:
-			evita_tag['AP'] = 4
-		elif evita_tag['APT'] < 20:
-			evita_tag['AP'] = 3
-		elif evita_tag['APT'] < 25:
-			evita_tag['AP'] = 2
+	while len(tops) > 0 or len(seconds) > 0:
+		if len(tops) > 0:
+			node = tops.pop(0)
 		else:
-			evita_tag['AP'] = 1
-		#TODO support non-zero controllability
-		evita_tag['CO'] = 0
+			node = seconds.pop(0)
 
-		evita_tag['FR'] = get_evita_security_risk_level(evita_tag['FS'], evita_tag['AP'])
-		evita_tag['OR'] = get_evita_security_risk_level(evita_tag['OS'], evita_tag['AP'])
-		evita_tag['PR'] = get_evita_security_risk_level(evita_tag['PS'], evita_tag['AP'])
-		evita_tag['SR'] = get_evita_security_risk_level(evita_tag['SS'], evita_tag['AP'])
+		title = get_node_title(node)
 
-		print("%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s" % (
-			evita_tag['Node'],
-			evita_tag['FS'],
-			evita_tag['OS'],
-			evita_tag['PS'],
-			evita_tag['SS'],
-			evita_tag['ET'],
-			evita_tag['E'],
-			evita_tag['K'],
-			evita_tag['WO'],
-			evita_tag['EQ'],
-			evita_tag['APT'],
-			evita_tag['AP'],
-			evita_tag['CO'],
-			evita_tag['FR'],
-			evita_tag['OR'],
-			evita_tag['PR'],
-			evita_tag['SR'],
-		))
+		print_title_headings_for_goal_node(heading_level, title)
+		add_graphic(node, title)
 
-	print("\n**FS** = Financial Severity **OS** = Operational Severity **PS** = Privacy Severity **SS** = Safety Severity **ET** = Elapsed Time **E** = Expertise **K** = Knowledge **WO** = Window of Opportuntiy **EQ** = Equiptment Required **APT** = Attack Potential Total **AP** = Attack Probability **CO** = Controlability (Safety) **FR** = Financial Risk **OR** = Operational Risk **PR** = PrivacyRisk **SR** = Safety Risk ")
+		has_description = node_has_description(node)
 
-cuts = sys.argv[1:]
-data = json.load(sys.stdin)
+		mitigations_list = list()
+		for child in get_node_children(node):
+			if is_mitigation(child):
+				mitigations_list.append(child)
+		has_mitigations = len(mitigations_list)
+
+		if has_description:
+			print("\n%s" % get_description(node))
+
+		if has_mitigations:
+			level = 2
+			print("\n%s Mitigation%s Required\n" % ('#' * (level+1), "" if len(mitigations_list) <= 1 else "s"))
+			emit_list_of_mitigations(node)
+
+		emit_only_attacker_methods_section(depth, cuts, node)
+	return
+
+fd_in = open(args.input, 'r')
+cuts = args.cuts
+if cuts is None:
+	cuts = list()
+
+data = json.load(fd_in)
+fd_in.close()
 
 resources = None
 if 'resources' in data:
@@ -275,12 +332,11 @@ if 'resources' in data:
 
 if 'id' in data and data['id'] == 'root':
 	#version 2 mindmup
-	tops.append(data['ideas']['1'])
+	root = data['ideas']['1']
 else:
-	tops.append(data)
+	root = data
 
-evita_tags = []
-
+nodes_lookup = build_nodes_lookup(root)
+tops.append(root)
 do_tops()
 
-do_evita(evita_tags)
