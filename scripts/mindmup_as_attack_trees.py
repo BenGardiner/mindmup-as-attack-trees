@@ -279,7 +279,7 @@ def resolve_all_text_node_references(description, nodes_lookup):
 	
 	return description
 
-def is_node_weigthed(node):
+def is_node_weighted(node):
 	apt = get_node_apt(node)
 	return (not apt is None) and (not math.isnan(apt)) and (not math.isinf(apt))
 
@@ -372,7 +372,7 @@ def do_propagate_apt_without_deref(node):
 	return
 
 def do_propagate_apt_with_deref(node, nodes_lookup):
-	if is_node_weigthed(node):
+	if is_node_weighted(node):
 		return
 
 	if is_mitigation(node):

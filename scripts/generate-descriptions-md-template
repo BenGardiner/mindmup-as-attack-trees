@@ -87,7 +87,7 @@ def emit_only_attacker_objective_section(cuts, node, tops, seconds):
 			#change node description to "This objective's severity and other details are covered in section *Attack Objective Node %s*, above. Please see that section for more details. In this section we will examine the Attacker Methods and intermediate nodes below it down to the attack vectors in detail.
 			if not is_outofscope(node):
 				new_node = copy.deepcopy(node)
-				update_raw_description(new_node, "This objective's severity and other details are covered in section *Attacker Objective Node %s*, above. Please see that section for more details. In this section we will examine the Attacker Methods and intermediate nodes below it down to the attack vectors in detail." % working_title)
+				update_raw_description(new_node, "This objective's severity and other details are covered in section *Attacker Objective Node %s*, above. Please see that section for more details. In this section, we will examine the Attacker Methods and intermediate nodes below it down to the attack vectors in detail." % working_title)
 				if not args.only_objectives: # don't bother descending the tree in --only-objectives
 					seconds.append(new_node)
 		else:
@@ -269,7 +269,7 @@ def do_tops():
 	heading_level = 1
 
 	print("\n%s Attack Trees: Attacker Objectives" % ('#' * 1))
-	print("\n In the attack tree analysis, the attacker objectives are the top level attacker goals where both the motivations of the attacker and the impacts on the organization are understood.\n\nIn the sections that follow we will enumerate the attacker objectives discovered during the investigations of the target systems. These objectives will be considered in groups, as subtrees, for the purpose of sharing context of impact. We will highlight objectives which were considered out of scope for the analysis and, finally, we will also state the severities ascribed to each of the in-scope attacker objectives.")
+	print("\n In the attack tree analysis, the attacker objectives are the top-level attacker goals where both the motivations of the attacker and the impacts on the organization are understood.\n\nIn the sections that follow we will enumerate the attacker objectives discovered during the investigations of the target systems. These objectives will be considered in groups, as subtrees, for the purpose of sharing context of impact. We will highlight objectives which were considered out of scope for the analysis and, finally, we will also state the severities ascribed to each of the in-scope attacker objectives.")
 
 	while len(tops) > 0:
 		node = tops.pop(0)

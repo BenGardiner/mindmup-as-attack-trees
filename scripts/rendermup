@@ -103,7 +103,7 @@ do_draw = function(json) {
     return Object.keys(d.ideas).sort(function(a,b) { return a - b; }).map(key => d.ideas[key]);
   });
 
-  //Wow, this is embarassing. Please look away!
+  //Wow, this is embarrassing. Please look away!
   // 'works' only for 10pt sans-serif, here, when stars are properly aligned
   var approxTextWidth = (function() {
       function charW(w, c) {
