@@ -79,6 +79,7 @@ def emit_only_attacker_objective_section(cuts, node, tops, seconds):
 			#emit the full description
 			level = 3
 			working_title = node.get('title', None)
+			working_title = working_title.replace('Objective: ', '')
 			parsed_title = re.match(r'(\d+\..*?)\s(.*?)$',working_title).groups()
 			print("\n\n%s Attacker Objective Node %s (%s)" % ( ('#' * level, parsed_title[1], parsed_title[0])))
 			description = get_description(node)
