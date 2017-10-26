@@ -94,8 +94,10 @@ def collect_mitigation_to_vector_table(node, nodes_lookup):
 def do_each_riskpoint(node, nodes_lookup):
 	riskpoint_node = None
 	if is_riskpoint(node):
-		description = get_description(node).splitlines()[0]
-		print("\nRecall: %s" % description)
+		description_lines = get_description(node).splitlines()
+		if len(description_lines) > 0:
+			description = description_lines[0]
+			print("\nRecall: %s" % description)
 
 		print("\nBelow is a table summarizing the risks derived from the attack tree analysis, where risk is calculated from the severities ascribed and the likelihood of compromise calculated from the attack tree.\n")
 		print("\n\n| Attack Method | Safety Risk | Privacy Risk | Financial Risk | Operational Risk | Combined Attack Probability |")

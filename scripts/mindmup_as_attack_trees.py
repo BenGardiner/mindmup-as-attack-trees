@@ -524,16 +524,16 @@ def final_propagate_up_to_objectives(root_node):
 def derive_node_risks(root_node):
 	final_propagate_up_to_objectives(root_node)
 
-	objective_node = None
-	def derivor(node):
-		if is_objective(node):
-			objective_node = node
+	for objective in collect_objectives(root_node):
+		objective_node = objective
 
-		if is_riskpoint(node) and (not is_outofscope(node)):
-			derive_evita_risks(node, objective_node)
-		return
+		def derivor(node):
+			if is_riskpoint(node) and (not is_outofscope(node)):
+				derive_evita_risks(node, objective_node)
+			return
 
-	apply_each_node(root_node, derivor)
+		apply_each_node(objective, derivor)
+
 	return
 
 def derive_mitigation_impact(root_node, nodes_lookup, mitigation_list, initial_risks_table):
