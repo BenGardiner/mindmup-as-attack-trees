@@ -287,9 +287,9 @@ def do_tops():
 		local_tops.extend(tops)
 		tops = local_tops
 
-
-	print("\n\n%s Attack Trees: Attacker Methods Etc." % ('#' * 1))
-	print("\n In the attack tree analysis, the attacker methods follow from the objectives and these methods give rise to (many) attack vectors.\n\nIn the sections that follow we will examine the attack methods (the immediate children of the objectives) and the attack paths that can lead to an attacker successfully completing them.")
+	if len(tops) > 0 or len(seconds) > 0:
+		print("\n\n%s Attack Trees: Attacker Methods Etc." % ('#' * 1))
+		print("\n In the attack tree analysis, the attacker methods follow from the objectives and these methods give rise to (many) attack vectors.\n\nIn the sections that follow we will examine the attack methods (the immediate children of the objectives) and the attack paths that can lead to an attacker successfully completing them.")
 
 	while len(tops) > 0 or len(seconds) > 0:
 		if len(tops) > 0:
