@@ -51,6 +51,12 @@ def is_outofscope(node):
 	raw_description = get_raw_description(node)
 	return ( "out of scope".lower() in raw_description.lower() ) or ( 'OUT_OF_SCOPE::' in raw_description )
 
+def set_collapsed(node):
+	if not 'attr' in node:
+		node.update({'attr': dict()})
+	node.get('attr').update({'collapsed': True})
+	return
+
 def is_collapsed(node):
 	return node.get('attr', dict()).get('collapsed', False)
 

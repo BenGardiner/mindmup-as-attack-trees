@@ -28,9 +28,7 @@ def truncate(node, cuts, first):
 	if not first and is_cut(node, cuts) and not len(get_node_children(node)) == 0:
 		reference_title = get_node_reference_title(node)
 		node.update({ 'title': reference_title })
-		if not 'attr' in node:
-			node.update({'attr': dict()})
-		node['attr'].update({'collapsed': True})
+		set_collapsed(node)
 
 	for key, value in node.get('ideas', dict()).iteritems():
 		truncate(value, cuts, False)
