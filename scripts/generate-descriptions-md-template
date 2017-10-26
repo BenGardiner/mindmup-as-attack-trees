@@ -77,7 +77,7 @@ def emit_only_attacker_objective_section(cuts, node, tops, seconds):
 	if is_cut(node, cuts):
 		if is_objective(node):
 			#emit the full description
-			level = 2
+			level = 3
 			working_title = node.get('title', None)
 			parsed_title = re.match(r'(\d+\..*?)\s(.*?)$',working_title).groups()
 			print("\n\n%s Attacker Objective Node %s (%s)" % ( ('#' * level, parsed_title[1], parsed_title[0])))
@@ -114,7 +114,7 @@ def add_label(depth, cuts, node):
 		tops.append(node)
 		return
 	else:
-		level = 2
+		level = 3
 
 	if node.get('title', None) == 'AND':
 		emit_only_attacker_methods_section(depth, cuts, node)
@@ -152,22 +152,22 @@ def add_label(depth, cuts, node):
 			print("\n%s" % description)
 
 		if has_mitigations:
-			level = 2
-			print("\n%s Mitigation%s Required\n" % ('#' * (level+1), "" if len(mitigations_list) <= 1 else "s"))
+			level = 4
+			print("\n%s Mitigation%s Required\n" % ('#' * level, "" if len(mitigations_list) <= 1 else "s"))
 			emit_list_of_mitigations(node)
 
 	if (not is_collapsed(node)) and (not is_attack_vector(node)):
 		emit_only_attacker_methods_section(depth, cuts, node)
 	return
 
-def print_title_headings_for_goal_node(level,title):
-	print("\n\n%s Subtree %s" % ('#' * (level), title ))
+def print_title_headings_for_goal_node(level, title):
+	print("\n\n%s Subtree %s" % ('#' * (level), title))
 
-def print_title_headings_for_intermediate_node(level,title):
-	print("\n\n%s Intermediate Node %s" % ('#' * (level), title ))
+def print_title_headings_for_intermediate_node(level, title):
+	print("\n\n%s Intermediate Node %s" % ('#' * (level), title))
 
-def print_title_headings_for_attack_vector_node(level,title):
-	print("\n\n%s Attack Vector Node %s" % ('#' * (level), title ))
+def print_title_headings_for_attack_vector_node(level, title):
+	print("\n\n%s Attack Vector Node %s" % ('#' * (level), title))
 
 def print_other_headings(node, level, title, description):
 	global evita_tags
@@ -266,7 +266,7 @@ def do_tops():
 	global cuts
 
 	depth = 0
-	heading_level = 1
+	heading_level = 2
 
 	print("\n%s Attack Trees: Attacker Objectives" % ('#' * 1))
 	print("\n In the attack tree analysis, the attacker objectives are the top-level attacker goals where both the motivations of the attacker and the impacts on the organization are understood.\n\nIn the sections that follow we will enumerate the attacker objectives discovered during the investigations of the target systems. These objectives will be considered in groups, as subtrees, for the purpose of sharing context of impact. We will highlight objectives which were considered out of scope for the analysis and, finally, we will also state the severities ascribed to each of the in-scope attacker objectives.")
@@ -310,8 +310,8 @@ def do_tops():
 			print("\n%s" % get_description(node))
 
 		if has_mitigations:
-			level = 2
-			print("\n%s Mitigation%s Required\n" % ('#' * (level+1), "" if len(mitigations_list) <= 1 else "s"))
+			level = 4
+			print("\n%s Mitigation%s Required\n" % ('#' * level, "" if len(mitigations_list) <= 1 else "s"))
 			emit_list_of_mitigations(node)
 
 		emit_only_attacker_methods_section(depth, cuts, node)
