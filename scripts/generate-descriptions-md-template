@@ -25,7 +25,7 @@ tops = list()
 seconds = list()
 
 def truncate(node, cuts, first):
-	if not first and is_cut(node, cuts) and 'ideas' in node:
+	if not first and is_cut(node, cuts) and not len(get_node_children(node)) == 0:
 		reference_title = get_node_reference_title(node)
 		node.update({ 'title': reference_title })
 		if not 'attr' in node:
