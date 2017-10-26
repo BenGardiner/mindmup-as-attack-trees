@@ -12,8 +12,8 @@ def info(type, value, tb):
 	ipdb.pm()
 #sys.excepthook = info
 
-parser.add_argument("--for-pandoc", action='store_true', help="generate markdown destined for pandoc, disables pandoc-specific markdown tricks. When not specified, the output is tailored for github.")
 parser.add_argument("input", help="the mindmup file that will be processed to create the markdown text body")
+parser.add_argument("--for-pandoc", action='store_true', help="generate markdown destined for pandoc, disables pandoc-specific markdown tricks. When not specified, the output is tailored for github.")
 parser.add_argument('--cuts', nargs='+', help='specify a list of nodes (by title string match) where the tree should be cut-up while rendering', required=False)
 parser.add_argument("--only-objectives", action='store_true', help="only generate markdown for the attacker objectives, not the rest of the tree")
 parser.add_argument("--no-attack-classification", action='store_true', help="don't emit the sometimes noisy 'attack classification' sections for the attack vectors")
