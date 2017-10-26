@@ -281,8 +281,11 @@ def do_tops():
 		add_graphic(node, title)
 		print("\n%s" % get_description(node))
 
+		local_tops = list()
 		for child in get_node_children(node):
-			emit_only_attacker_objective_section(cuts, child, tops, seconds)
+			emit_only_attacker_objective_section(cuts, child, local_tops, seconds)
+		local_tops.extend(tops)
+		tops = local_tops
 
 
 	print("\n\n%s Attack Trees: Attacker Methods Etc." % ('#' * 1))
