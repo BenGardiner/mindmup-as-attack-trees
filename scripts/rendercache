@@ -1,0 +1,21 @@
+#!/bin/bash
+
+die () {
+    echo "$@"
+    exit 1
+}
+
+mkdir -p .rendercache
+
+pngfile="${1%.*}.png"
+#make hash of command line and input file
+hash="$(cat "${1}" <(echo "$@") | shasum -a 1 | awk '{print $1}')"
+#if .rendercache/hash exists copy .rendercache/hash/file{.png} to here
+if [ -d .rendercache/${hash} ]; then
+    cp ".rendercache/${hash}/${pngfile}" . || die
+    exit 0
+fi
+#otherwise, run command mkdir .rendercache/hash and copy file{.png} there
+rendermup "$@" || die "rendermup $@"
+mkdir -p .rendercache/${hash}
+cp "${pngfile}" .rendercache/${hash} || die
