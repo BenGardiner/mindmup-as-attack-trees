@@ -620,13 +620,39 @@ def normalize_nodes(root_node):
 		apply_each_node(root, title_strip)
 		return
 
-#TODO: sort title above description and attr
 	def sort_children(node):
 		if not is_node_a_leaf(node):
 			node.update({ 'ideas': get_sorted_ideas(node) })
 		return
 
+	def order_children_contents(node):
+		if not is_node_a_leaf(node):
+			for v,child in node.get('ideas').iteritems():
+				ordered_child = OrderedDict()
+
+				if not child.get('title') is None:
+					ordered_child.update({'title': child.pop('title')})
+
+				if not child.get('attr') is None:
+					ordered_attr = OrderedDict()
+					if not child.get('attr').get('attachment') is None:
+						ordered_attr.update({'attachment': child.get('attr').pop('attachment')})
+
+					ordered_attr.update(child.pop('attr')) # everything else
+					ordered_child.update({'attr':  ordered_attr})
+
+				if not child.get('ideas') is None:
+					ordered_child.update({'ideas': child.pop('ideas')})
+
+				if not child.get('id') is None:
+					ordered_child.update({'id': child.pop('id')})
+
+				ordered_child.update(child) # everything else
+				node.get('ideas').update({ v: ordered_child})
+		return
+
 	nodes = root_node
 	fix_titles(nodes)
+	apply_each_node(nodes, order_children_contents)
 	apply_each_node(nodes, sort_children)
 	return nodes

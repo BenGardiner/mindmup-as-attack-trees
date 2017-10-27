@@ -3,6 +3,12 @@
 import sys,json
 from mindmup_as_attack_trees import *
 
+import ipdb
+def info(type, value, tb):
+	ipdb.pm()
+
+sys.excepthook = info
+
 if len(sys.argv) < 2:
 	fd_in=sys.stdin
 else:
