@@ -60,14 +60,15 @@ else:
 	fd_in.close()
 	fd_out=open(sys.argv[1],'w')
 
-
 if 'id' in data and data['id'] == 'root':
 	#version 2 mindmup
-	do_ideas(data['ideas']['1'])
+	root_node = data['ideas']['1']
 else:
-	do_ideas(data)
+	root_node = data
+do_ideas(root_node)
 
-str = json.dumps(data, indent=2, sort_keys=True)
+normalize_nodes(root_node)
+str = json.dumps(data, indent=2, sort_keys=False)
 str = re.sub(r'\s+$', '', str, 0, re.M)
 str = re.sub(r'\s+$', '', str, flags=re.M)
 

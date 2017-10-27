@@ -8,8 +8,11 @@ import math
 text_maker = html2text.HTML2Text()
 text_maker.body_width = 0 #disable random line-wrapping from html2text
 
+def get_sorted_ideas(node):
+	return OrderedDict(sorted(node.get('ideas', dict()).iteritems(), key=lambda t: float(t[0])))
+
 def get_node_children(node):
-	return OrderedDict(sorted(node.get('ideas', dict()).iteritems(), key=lambda t: float(t[0]))).values()
+	return get_sorted_ideas(node).values()
 
 def remove_child(parent, node):
 	children = parent.get('ideas', dict())
@@ -19,6 +22,7 @@ def remove_child(parent, node):
 	return
 
 def is_node_a_leaf(node):
+	#TODO: speed optimization: test the length of the unsorted .values() of 'ideas'
 	return len(get_node_children(node)) == 0
 
 def node_has_description(node):
@@ -599,4 +603,30 @@ def get_probability_label(evita_probability):
 	else:
 		return "unknown"
 
+def normalize_nodes(root_node):
+	def fix_titles(root):
+		def title_strip(node):
+			title = get_node_title(node)
 
+			if title is '':
+				return
+
+			title = re.sub(r'\n+', ' ', title)
+			title = re.sub(r'\s+$', '', title)
+
+			set_node_title(node, title)
+			return
+
+		apply_each_node(root, title_strip)
+		return
+
+#TODO: sort title above description and attr
+	def sort_children(node):
+		if not is_node_a_leaf(node):
+			node.update({ 'ideas': get_sorted_ideas(node) })
+		return
+
+	nodes = root_node
+	fix_titles(nodes)
+	apply_each_node(nodes, sort_children)
+	return nodes
