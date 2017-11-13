@@ -55,10 +55,26 @@ def is_outofscope(node):
 	raw_description = get_raw_description(node)
 	return ( "out of scope".lower() in raw_description.lower() ) or ( 'OUT_OF_SCOPE::' in raw_description )
 
-def set_collapsed(node):
+def set_background_color(node, webcolor):
 	if not 'attr' in node:
 		node.update({'attr': dict()})
-	node.get('attr').update({'collapsed': True})
+	if not 'style' in node.get('attr'):
+		node.get('attr').update({'style': dict()})
+	node.get('attr').get('style').update({'background': webcolor})
+	return
+
+def set_collapsed_state(node, state):
+	if not 'attr' in node:
+		node.update({'attr': dict()})
+	node.get('attr').update({'collapsed': state})
+	return
+
+def set_collapsed(node):
+	set_collapsed_state(node, True)
+	return
+
+def set_expanded(node):
+	set_collapsed_state(node, False)
 	return
 
 def is_collapsed(node):
@@ -651,8 +667,22 @@ def normalize_nodes(root_node):
 				node.get('ideas').update({ v: ordered_child})
 		return
 
+	def remove_superfluous_members(node):
+		if not node.get('attr') is None:
+			if node.get('attr').get('collapsed') is False:
+				node.get('attr').pop('collapsed')
+			
+			if not node.get('attr').get('style') is None:
+				if len(node.get('attr').get('style')) == 0:
+					node.get('attr').pop('style')
+
+			if len(node.get('attr')) == 0:
+				node.pop('attr')
+		return
+
 	nodes = root_node
 	fix_titles(nodes)
+	apply_each_node(nodes,remove_superfluous_members)
 	apply_each_node(nodes, order_children_contents)
 	apply_each_node(nodes, sort_children)
 	return nodes
