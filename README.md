@@ -13,7 +13,7 @@ Python scripts for using mindmup `.mup` JSON as a medium for developing attack t
 |    | Step Description                                                                                                       | Script in `scripts/` |
 |---:|:-----------------------------------------------------------------------------------------------------------------------|:------:|
 |   0| normalize the `.mup` JSON -- useful before comitting to SCM to reduce diff noise                                       |```normalize-json```|
-|   1| check the `.mup` for problems (e.g. duplicate nodes, missing references, missing EVITA:: tags)                         |```checks.py``` |
+|   1| check the `.mup` for problems (e.g. duplicate nodes, missing references, missing EVITA:: tags) and strips hidden sections                         |```checks.py``` |
 |   2| number the nodes in the `.mup`, resolving references to nodes in the tree (and undo this)                              |```add-numbered-ids.py``` (```remove-numbered-ids.py```) |
 |   3| resolve any 'in-text' references to nodes                                                                              |```resolve-mup.py``` |
 |   4| propagate and calculate the required attack potentials and risks based on the model in the `.mup` file (and undo this) |```add-evita.py``` (```remove-evita.py```) |
