@@ -36,7 +36,7 @@ def truncate(node, cuts, first):
 	return node
 
 def get_safe_filename(notsafe):
-	safe = notsafe.replace("?", "_").replace("/", "_").replace(",", "_").replace('\'','_').replace('"','_').replace('(','_').replace(')','_').replace('  ', ' ')
+	safe = re.sub(r'[^a-zA-Z0-9_. -]', '_', notsafe).replace('  ', ' ')
 	return safe[:200] if len(safe) > 200 else safe
 
 def remove_mitigations(node):
