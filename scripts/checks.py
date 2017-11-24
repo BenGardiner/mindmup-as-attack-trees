@@ -28,10 +28,10 @@ def do_node_firstpass(node):
 
 	node_title = node.get('title', '')
 
-	if not node_title.find('TODO') == -1:
+	if not node_title.find('TODO') == -1 or not get_raw_description(node).find('TODO') == -1:
 		print("WARNING todo node: %s" % node_title)
 
-	if node_title == 'AND':
+	if node_title == 'AND' or node_title == 'OR':
 		return
 
 	if is_node_a_reference(node):
