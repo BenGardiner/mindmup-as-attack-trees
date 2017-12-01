@@ -628,6 +628,7 @@ def normalize_nodes(root_node):
 				return
 
 			title = re.sub(r'\n+', ' ', title)
+			title = re.sub(r'\s+', ' ', title)
 			title = re.sub(r'\s+$', '', title)
 
 			set_node_title(node, title)
