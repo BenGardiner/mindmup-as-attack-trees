@@ -30,6 +30,7 @@ def do_node_firstpass(node):
 
 	if not node_title.find('TODO') == -1 or not get_raw_description(node).find('TODO') == -1:
 		print("WARNING todo node: %s" % node_title)
+		return
 
 	if node_title == 'AND' or node_title == 'OR':
 		return
