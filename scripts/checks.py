@@ -59,6 +59,9 @@ def do_node_firstpass(node):
 	if is_objective(node) and (not is_outofscope(node)) and get_raw_description(node).find('EVITA::') == -1:
 		print("ERROR Objective node w/o EVITA:: marker: %s" % node_title)
 
+	if not is_outofscope(node) and is_attack_vector(node) and not node_title.find('(Locally-Permitted)') == -1:
+	    print("WARNING overconstrained node: attack vector node with (Locally-Permitted): %s" % node_title)
+
 	#TODO WARNING Node with explicit (Out of Scope) label
 
 	#TODO ERROR OBJECTIVE Node without EVITA
