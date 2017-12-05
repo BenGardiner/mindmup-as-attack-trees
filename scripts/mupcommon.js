@@ -28,11 +28,6 @@ function is_mitigation(d) {
     return is_leaf(d) && /Mitigation: /.test(get_title(d));
 }
 
-function hide_children(d) {
-    //if (is_leaf(d)){
-        d.attr("visibility", "hidden");
-}
-
 function is_all(d, predicate) {
     if (typeof d.children === 'undefined') return True;
     if (d.children == null){return true;}
@@ -104,6 +99,7 @@ function do_draw(node_rendering) {
     var text_line_height = 10 * 1.1;
     var node_width_size;
     var node_height_size;
+    var max_depth;
     if (argv.width !== -1 && argv.height == -1) {
         max_depth = 0;
         root_node.each(function(d){
@@ -132,8 +128,13 @@ function do_draw(node_rendering) {
     }
 
 
-    width1 = argv.width - margin.left - margin.right;
+    if(node_rendering){
+        width1 = argv.width - margin.left - margin.right;
+    }else{
+        width1 = max_depth*180 - margin.left - margin.right;
+    }
 
+    //if we are being run serverside, create svg instead of rendering one for browser
     if (node_rendering){
         svg = node_rendering.createSVG();
     }else{
