@@ -33,7 +33,10 @@ const argv = yargs
 
 const styles = fs.readFileSync("./mupstyle.css");
 const input = fs.readFileSync(argv._[0], 'utf8');
-inputHtmlFiledata = fs.readFileSync("stubbedhtml.html");
+inputHtmlFiledata = fs.readFileSync("webstub.html");
+inputd3script = fs.readFileSync("d3.v4.min.js");
+inputmupscript = fs.readFileSync("mupcommon.js");
+inputmupstyle = fs.readFileSync("mupstyle.css");
 const outputHtmlFilename = path.basename(argv._[0], ".mup") + ".html";
 const outputSvgFilename = path.basename(argv._[0], ".mup") + ".svg";
 const outputPngFilename = path.basename(argv._[0], ".mup") + ".png";
@@ -53,9 +56,10 @@ mup.mup_init(mindmup_json, d3n);
 
 // create output files
 const svg2png = require('svg2png');
-console.log(inputHtmlFiledata.toString());
 inputHtmlFiledata = inputHtmlFiledata.toString().replace("%%filename%%",path.basename(argv._[0]));
-console.log(inputHtmlFiledata.toString());
+inputHtmlFiledata = inputHtmlFiledata.toString().replace("%%d3script%%",inputd3script.toString());
+inputHtmlFiledata = inputHtmlFiledata.toString().replace("%%mupcommon%%",inputmupscript.toString());
+inputHtmlFiledata = inputHtmlFiledata.toString().replace("%%mupstyle%%",inputmupstyle.toString());
 fs.writeFile(outputHtmlFilename, inputHtmlFiledata, function () {
   console.log('>> Done. Open '+outputHtmlFilename+'" in a web browser');
 });
