@@ -1,104 +1,20 @@
-#!/usr/bin/env node
-
-const fs = require('fs');
-const D3Node = require('d3-node');
-const d3 = require('d3');
-const path = require("path");
-const yargs = require('yargs');
-
-const argv = yargs
-    .usage(`rendermup input.mup`)
-    .demand(1)
-    .option("w", {
-        alias: "width",
-        type: "number",
-        describe: "The output file width, in pixels",
-        default: "1260"
-    })
-    .option("h", {
-        alias: "height",
-        type: "number",
-        describe: "The output file height, in pixels",
-        default: "-1"
-    })
-    .option("r", {
-        alias: "right-justified",
-        type: "boolean",
-        describe: "render the tree with all leaves at the right (i.e. cluster/dendrogram layout)",
-        default: "false"
-    })
-    .help(false)
-    .argv;
-
-const input = fs.readFileSync(argv._[0], 'utf8');
-const outputHtmlFilename = path.basename(argv._[0], ".mup") + ".html";
-
-const styles = `
-
-.node circle {
-  fill: #999;
-}
-
-.node rect {
-  fill: #999;
-}
-
-.node text {
-  font: 10px sans-serif;
-}
-
-.node--vector_oos text {
-  text-decoration: line-through;
-}
-
-.node--internal circle {
-  stroke: #d3d3d3;
-  fill: #FFF;
-}
-
-.node--vector circle {
-  fill: #000;
-}
-
-.node--vector_ref circle {
-  stroke: #000;
-  fill: #FFF;
-}
-
-.node--vector_oos circle {
-  fill: #000;
-}
-
-.node--mitigation rect {
-  fill: #000;
-}
-
-.node--mitigation_ref rect {
-  stroke: #000;
-  fill: #FFF;
-}
-
-.link {
-  fill: none;
-  stroke: #d3d3d3;
-  stroke-opacity: 0.7;
-  stroke-width: 1.5px;
-}
-
-`;
-
 var margin = {top: 10, right: 24, bottom: 22, left: 40};
+var argv = {height: -1, width: 2700, r: false};
+var root;
+var svg;
+const d3exp = require("d3"); 
+var root_node;
 
 function get_raw_description(d) {
     var description = ((d.data.attr || {}).note || {}).text || '';
     if (description === '') {
-        description = ((d.data.attr || {}).attachment || {}).content || ''
+        description = ((d.data.attr || {}).attachment || {}).content || '';
     }
 
     return description;
 }
 
-function is_freeheight_layout() { return argv.height == -1 && !argv.r; }
+function is_freeheight_layout() { return true }
 
 function get_title(d) {
     return d.data.title || '';
@@ -112,8 +28,14 @@ function is_mitigation(d) {
     return is_leaf(d) && /Mitigation: /.test(get_title(d));
 }
 
+function hide_children(d) {
+    //if (is_leaf(d)){
+        d.attr("visibility", "hidden");
+}
+
 function is_all(d, predicate) {
     if (typeof d.children === 'undefined') return True;
+    if (d.children == null){return true;}
 
     result = true;
     d.children.forEach(function(d) {
@@ -121,6 +43,16 @@ function is_all(d, predicate) {
             });
 
     return result;
+}
+
+function toggle(d){
+        if(d.children){
+                d._children = d.children;
+                d.children = null;
+        }else{
+                d.children = d._children;
+                d._children = null;
+        }
 }
 
 function is_attack_vector(d) {
@@ -139,19 +71,19 @@ function is_out_of_scope(d) {
     return /out of scope/i.test(get_raw_description(d));
 }
 
+function get_node_from_idea(idea){
+    return root_node[idea];
+}
+
 
 
 ///-- start D3 code
-do_draw = function(json) {
-    var root_node = d3.hierarchy(json, function(d) {
-            if (typeof d.ideas === "undefined"){ return null; }
-            if (typeof d.attr !== "undefined" && typeof d.attr.collapsed !== "undefined" && d.attr.collapsed === true) { return null; }
-            //sort(...) orders the ideas the same as the children are ordered in mindmup
-            return Object.keys(d.ideas).sort(function(a,b) { return a - b; }).map(key => d.ideas[key]);
-            });
-
+function do_draw(node_rendering) {
     //Wow, this is embarrassing. Please look away!
     // 'works' only for 10pt sans-serif, here, when stars are properly aligned
+    if(node_rendering){
+        d3 = d3exp;
+    }
     var approxTextWidth = (function() {
             function charW(w, c) {
             if (c == 'W' || c == 'M') w += 15;
@@ -199,10 +131,16 @@ do_draw = function(json) {
         }
     }
 
-    var svg = d3n.createSVG();
 
-    width = argv.width - margin.left - margin.right;
+    width1 = argv.width - margin.left - margin.right;
 
+    if (node_rendering){
+        svg = node_rendering.createSVG();
+    }else{
+    svg = d3.select("svg"), width = +svg.attr("width"),
+        height = +svg.attr("height"),
+        g = svg.append("g").attr("transform", "translate(" + (width/2 + 40 + "," + (height / 2 + 90) + ")"));
+    }
     var tree_maker;
     if (argv.r) {
         //dendrograms
@@ -253,10 +191,14 @@ do_draw = function(json) {
             });
 
     height = max_x + node_height_size;
-    total_width = width + margin.left + margin.right;
+    total_width = width1 + margin.left + margin.right;
     total_height = height + margin.top + margin.bottom;
-
-    var g = svg
+    if(node_rendering){
+        node_rendering.width = total_width;
+    }
+    
+    // Create the main container
+    svg = svg
         .attr("width", total_width)
         .attr("height", total_height)
         .attr("viewBox", "0 0 " + total_width + " " + total_height)
@@ -304,8 +246,7 @@ do_draw = function(json) {
             .range(['#add8e6','#a3eb92','#ffd700','#ffce69','#ffc0cb'])
             .domain([min+1*d,min+2*d,min+3*d,min+4*d,min+5*d]);
     }(1,5);
-
-    var link = g.selectAll(".link")
+    var link = svg.selectAll(".link")
         .data(tree_data)
         .enter().append("path")
         .attr("class", "link")
@@ -318,7 +259,7 @@ do_draw = function(json) {
                 }
                 })
     .attr("d", function(d) {
-            elbow_point = (d.parent.y + 6*(d.y - d.parent.y) / 10)
+            elbow_point = (d.parent.y + 6*(d.y - d.parent.y) / 10);
 
             if (argv.r) {
             elbow_point = d.parent.y;
@@ -327,8 +268,8 @@ do_draw = function(json) {
             var min_y = d.y;
             d.parent.children.forEach(function(entry){
                     min_y = Math.min(min_y, entry.y);
-                    })
-            elbow_point = (d.parent.y + (min_y - d.parent.y) / 2)
+                    });
+            elbow_point = (d.parent.y + (min_y - d.parent.y) / 2);
             }
             }
 
@@ -340,9 +281,9 @@ do_draw = function(json) {
             d.parent.children.forEach(function(entry){
                     count = count + 1;
                     if (entry == d && d.parent.children.length > 1) {
-                    this_childs_index = (count - siblings_count / 2.0 - 0.5) * 2.0
+                    this_childs_index = (count - siblings_count / 2.0 - 0.5) * 2.0;
                     }
-                    })
+                    });
             }
             return "M" + d.parent.y + "," + d.parent.x
                 + "l" + Math.abs(this_childs_index) + "," + this_childs_index
@@ -410,7 +351,9 @@ do_draw = function(json) {
         });
         return arrLineCreatedCount;
     }
-    var node = g.selectAll(".node")
+
+
+    var node = svg.selectAll(".node")
         .data(root_node.descendants())
         .enter().append("g")
         .attr("class", function(d) {
@@ -434,6 +377,15 @@ do_draw = function(json) {
                 return "node node--internal"; 
                 })
     .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
+    .on("click", function(d,i){
+            if(!is_mitigation(d)){
+                toggle(d);
+                svg.selectAll("*").remove();
+            } else{
+                d.attr("visibility", "hidden");
+            }
+            do_draw(node_rendering);
+        })
 
         node.append("circle")
         .filter(function (d) { return ! is_mitigation(d); })
@@ -470,24 +422,53 @@ do_draw = function(json) {
             }
             return (is_attack_vector(d) || is_mitigation(d)) ? "baseline" : "hanging";
             })
+    .style("fill", function(d){
+        if (d._children == null || d._children == undefined){
+            return "normal";
+        }else{
+            return "purple";
+        }
+    })
     .text(function(d) { return d.data.title; })
         .call(d3TextWrap, text_wrap_width, 0, 0);
-};
 
-markup = '<div id="container"><div id="chart"></div></div>';
-var options = {selector:'#chart', svgStyles:styles, container:markup, d3Module:d3};
 
-var d3n = new D3Node(options);
-
-mindmup_json = JSON.parse(input);
-
-if (typeof mindmup_json.id !== "undefined" && mindmup_json['id'] === "root") { // handle >= 2 mindmup_json
-    mindmup_json = mindmup_json['ideas']['1'];
 }
 
-do_draw(mindmup_json);
+function mup_init(filedata, svg_exported_object){
+        //console.log(__dirname);
+        //if (data != null){
+            //console.log(filedata);
+        if (svg_exported_object){
+            const d3 = require("d3");
+            root_node = d3.hierarchy(filedata, function(d) {
+            if (typeof d.ideas === "undefined"){ return null; }
+            if (typeof d.attr !== "undefined" && typeof d.attr.collapsed !== "undefined" && d.attr.collapsed === true) { return null; }
+            //sort(...) orders the ideas the same as the children are ordered in mindmup
+            return Object.keys(d.ideas).sort(function(a,b) { return a - b; }).map(key => d.ideas[key]);
+            });
 
-fs.writeFile(outputHtmlFilename, d3n.html(), function () {
-        console.log('>> Done. Open '+outputHtmlFilename+'" in a web browser');
-        });
+        root = filedata;
+        do_draw(svg_exported_object);
+        }else{
+        d3.json(filedata, function(data){
+        //data = JSON.parse("The Bottom Line.mup");
+        root_node = d3.hierarchy(data, function(d) {
+            if (typeof d.ideas === "undefined"){ return null; }
+            if (typeof d.attr !== "undefined" && typeof d.attr.collapsed !== "undefined" && d.attr.collapsed === true) { return null; }
+            //sort(...) orders the ideas the same as the children are ordered in mindmup
+            return Object.keys(d.ideas).sort(function(a,b) { return a - b; }).map(key => d.ideas[key]);
+            });
 
+        root = data;
+        do_draw(svg_exported_object);
+    });
+    }
+}
+
+function update(source){
+        var nodes = root_node.nodes(root).reverse(); 
+        var node = svg.selectAll("g.node").data(nodes,function(d) { return d.id || (d.id = ++i);});
+        var link = svg.selectAll("path.link").data(root_node.links(nodes),function(d) {return d.target.id;});
+}
+module.exports.mup_init = mup_init;

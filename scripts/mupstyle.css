@@ -1,0 +1,49 @@
+.node circle {
+  fill: #999;
+}
+
+.node rect {
+  fill: #999;
+}
+
+.node text {
+  font: 10px sans-serif;
+}
+
+.node--vector_oos text {
+  text-decoration: line-through;
+}
+
+.node--internal circle {
+  stroke: #d3d3d3;
+  fill: #FFF;
+}
+
+.node--vector circle {
+  fill: #000;
+}
+
+.node--vector_ref circle {
+  stroke: #000;
+  fill: #FFF;
+}
+
+.node--vector_oos circle {
+  fill: #000;
+}
+
+.node--mitigation rect {
+  fill: #000;
+}
+
+.node--mitigation_ref rect {
+  stroke: #000;
+  fill: #FFF;
+}
+
+.link {
+  fill: none;
+  stroke: #d3d3d3;
+  stroke-opacity: 0.7;
+  stroke-width: 1.5px;
+}
