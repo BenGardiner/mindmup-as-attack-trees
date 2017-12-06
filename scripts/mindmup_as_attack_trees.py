@@ -260,6 +260,28 @@ def groom_forward_references(root):
 	apply_last_each_node(root, maybe_swap)
 	return
 
+def dedup_with_references(root):
+	has_been_seen = dict()
+
+	def maybe_dedup(node):
+		if is_node_not_for_lookup(node):
+			return
+
+		if not is_node_a_reference(node):
+			if has_been_seen.get(get_node_title(node)) is None:
+				has_been_seen.update({get_node_title(node): node})
+				return
+
+			node.update({'ideas': dict()})
+			set_background_color(node, '#FFFFFF')
+			update_raw_description(node, '')
+			new_title=get_node_reference_title(node)
+			set_node_title(node, new_title)
+
+	#TODO: warn if dedup'ing the bigger subtree
+	apply_each_node(root, maybe_dedup)
+	return
+
 def detect_html(text):
 	return bool(BeautifulSoup(text, "html.parser").find())
 
@@ -324,9 +346,14 @@ def get_node_referent_title(node):
 
 def get_node_reference_title(node):
 	title = node.get('title','')
-	parsed_title = re.match(r'(\d+\..*?)\s(.*?)$',title).groups()
 
-	wip_reference_title = "%s (%s)" % (parsed_title[1], parsed_title[0])
+	matches = re.match(r'^(\d+\..*?)\s(.*?)$',title)
+	if matches is None:
+		wip_reference_title = "%s (*)" % title
+	else:
+		parsed_title = matches.groups()
+		wip_reference_title = "%s (%s)" % (parsed_title[1], parsed_title[0])
+
 	return wip_reference_title
 
 def is_node_a_reference(node):
