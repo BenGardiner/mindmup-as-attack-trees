@@ -7,33 +7,37 @@ from collections import OrderedDict
 
 macros_lookup={}
 
-def list(node):
-    foreach_node(node)
-
-def preprocess(node):
-    foreach_node(node)
-
 def process_macro(elem):
     elems = elem.split("=")
     macros_lookup[elems[0]]=elems[1]
 
-def get_key_name(node):
+def get_key_name(macro):
     key=''
-    nn = node.split(' ')
-    for elem in nn:
-        if elem.startswith('__M__'):
-            key = elem[5:]
-            break
+    if macro.startswith('__M__'):
+        key = macro[5:]
     return key
 
-def foreach_node(node):
-    for child in get_node_children(node):
-        process_pass(child)
+def select_child(node):
+    node_title = get_node_title(node)
+
+    #node title must start with 'XOR'
+    if not node_title.startswith('XOR'):
+        return
+
+    macro=re.findall(r'__M__[A-Z_]+', node_title)[0]
+
+    key_name=get_key_name(macro)
+    key_value=int(macros_lookup[key_name])
+
+    selected_child=get_node_children(node)[key_value]
+
+    node.clear()
+    node.update(selected_child)
+
     return
 
 display_set = dict()
 def process_pass(node):
-    foreach_node(node)
     node_title = get_node_title(node)
     node_description = get_raw_description(node)
     if node_title.find("__M__") >= 0 or node_description.find("__M__") >= 0:
@@ -43,12 +47,14 @@ def process_pass(node):
                     print match
                     display_set.update({match: True})
         else:
-            key_name = get_key_name(node_title)
-            for key in macros_lookup:
-                if node_title.find(key_name) >= 0:
-                    set_node_title(node, node_title.replace(key_name,macros_lookup[key_name]).replace("__M__",""))
-                if node_description.find(key_name) >= 0:
-                    update_raw_description(node, node_description.replace(key_name,macros_lookup[key_name].replace("__M__","")))
+            if node_title.startswith('XOR'):
+                return
+
+            for key_name in macros_lookup.keys():
+                node_title = node_title.replace('__M__' + key_name, macros_lookup[key_name])
+                set_node_title(node, node_title)
+                node_description = node_description.replace('__M__' + key_name,macros_lookup[key_name])
+                update_raw_description(node, node_description)
 
 #parse cmd line and populate all pairs to dictionary
 
@@ -96,10 +102,12 @@ else:
     root_node = data
 
 if display_list:
-    list(root_node)
+    apply_each_node(root_node, process_pass)
     sys.exit()
 
-preprocess(root_node)
+apply_each_node(root_node, process_pass)
+apply_each_node(root_node, select_child)
+
 str = json.dumps(data, indent=2, sort_keys=True)
 fd_out.write(str)
 fd_out.close()
