@@ -31,13 +31,17 @@ def foreach_node(node):
         process_pass(child)
     return
 
+display_set = dict()
 def process_pass(node):
     foreach_node(node)
     node_title = get_node_title(node)
     node_description = get_raw_description(node)
     if node_title.find("__M__") >= 0 or node_description.find("__M__") >= 0:
         if display_list:
-            print "====>",node_title
+            for match in re.findall(r'__M__[A-Z_]+', node_title + ' ' + node_description):
+                if display_set.get(match) is None:
+                    print match
+                    display_set.update({match: True})
         else:
             key_name = get_key_name(node_title)
             for key in macros_lookup:
@@ -45,6 +49,7 @@ def process_pass(node):
                     set_node_title(node, node_title.replace(key_name,macros_lookup[key_name]).replace("__M__",""))
                 if node_description.find(key_name) >= 0:
                     update_raw_description(node, node_description.replace(key_name,macros_lookup[key_name].replace("__M__","")))
+
 #parse cmd line and populate all pairs to dictionary
 
 fd_in = 0
