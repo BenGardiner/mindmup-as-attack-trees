@@ -2,8 +2,9 @@ var margin = {top: 10, right: 24, bottom: 22, left: 40};
 var argv = {height: -1, width: 2700, r: false};
 var root;
 var svg;
-const d3exp = require("d3"); 
 var root_node;
+var root_dict = [];
+const d3exp =require("d3");
 
 function get_raw_description(d) {
     var description = ((d.data.attr || {}).note || {}).text || '';
@@ -62,12 +63,19 @@ function is_reference(d) {
     return ( get_title(d).search("\\(\\*\\)") !== -1  ) || (/\(\d+\..*?\)/.test(get_title(d)));
 }
 
+function is_reference_oss(node){
+    //console.log(get_title(node));
+    //console.log(get_title(node).replace("(*)","").trim());
+    //console.log(root_dict[get_title(node).replace("(*)","").trim()]);
+    return is_reference(root_dict[get_title(node).replace("\\(\\*\\)","").trim()]);
+}
+
 function is_out_of_scope(d) {
     return /out of scope/i.test(get_raw_description(d));
 }
 
 function get_node_from_idea(idea){
-    return root_node[idea];
+
 }
 
 
@@ -77,7 +85,7 @@ function do_draw(node_rendering) {
     //Wow, this is embarrassing. Please look away!
     // 'works' only for 10pt sans-serif, here, when stars are properly aligned
     if(node_rendering){
-        d3 = d3exp;
+       d3 = d3exp;
     }
     var approxTextWidth = (function() {
             function charW(w, c) {
@@ -360,6 +368,9 @@ function do_draw(node_rendering) {
         .attr("class", function(d) {
                 if (is_attack_vector(d)) {
                 if (is_reference(d)) {
+                    if(is_reference_oss(d)){
+                        return "node node--vector_ref_oos"
+                    }
                 return "node node--vector_ref";
                 } else if (is_out_of_scope(d)) {
                 return "node node--vector_oos";
@@ -436,39 +447,20 @@ function do_draw(node_rendering) {
 }
 
 function mup_init(filedata, svg_exported_object){
-        //console.log(__dirname);
-        //if (data != null){
-            //console.log(filedata);
-        if (svg_exported_object){
+        if(svg_exported_object){
             const d3 = require("d3");
-            root_node = d3.hierarchy(filedata, function(d) {
+        }
+        root_node = d3.hierarchy(filedata, function(d) {
             if (typeof d.ideas === "undefined"){ return null; }
             if (typeof d.attr !== "undefined" && typeof d.attr.collapsed !== "undefined" && d.attr.collapsed === true) { return null; }
             //sort(...) orders the ideas the same as the children are ordered in mindmup
             return Object.keys(d.ideas).sort(function(a,b) { return a - b; }).map(key => d.ideas[key]);
-            });
+        });
+        root_node.each(function(d){
+            root_dict[get_title(d)] = d;
+        });
 
         root = filedata;
         do_draw(svg_exported_object);
-        }else{
-        d3.json(filedata, function(data){
-        //data = JSON.parse("The Bottom Line.mup");
-        root_node = d3.hierarchy(data, function(d) {
-            if (typeof d.ideas === "undefined"){ return null; }
-            if (typeof d.attr !== "undefined" && typeof d.attr.collapsed !== "undefined" && d.attr.collapsed === true) { return null; }
-            //sort(...) orders the ideas the same as the children are ordered in mindmup
-            return Object.keys(d.ideas).sort(function(a,b) { return a - b; }).map(key => d.ideas[key]);
-            });
-
-        root = data;
-        do_draw(svg_exported_object);
-    });
-    }
-}
-
-function update(source){
-        var nodes = root_node.nodes(root).reverse(); 
-        var node = svg.selectAll("g.node").data(nodes,function(d) { return d.id || (d.id = ++i);});
-        var link = svg.selectAll("path.link").data(root_node.links(nodes),function(d) {return d.target.id;});
 }
 module.exports.mup_init = mup_init;

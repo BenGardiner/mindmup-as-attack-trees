@@ -28,6 +28,10 @@
   fill: #FFF;
 }
 
+.node--vector_ref_oos text {
+  text-decoration: line-through;
+}
+
 .node--vector_oos circle {
   fill: #000;
 }

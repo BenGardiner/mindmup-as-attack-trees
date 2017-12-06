@@ -1,11 +1,13 @@
 <style>%%mupstyle%%</style>
-<body>
 <svg width="2700" height="1060"></svg>
 <div id="container"><div id="chart"></div></div>
 <body>
 <script >%%d3script%%</script>
 <script >%%mupcommon%%</script>
+<script type="application/json" id="mupdata">
+%%jsondata%%
+</script>
 <script>
-mup_init("%%filename%%", null);
+mup_init(JSON.parse(document.getElementById("mupdata").innerHTML), null);
 </script>
 </body>

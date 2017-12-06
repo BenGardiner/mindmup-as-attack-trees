@@ -56,7 +56,7 @@ mup.mup_init(mindmup_json, d3n);
 
 // create output files
 const svg2png = require('svg2png');
-inputHtmlFiledata = inputHtmlFiledata.toString().replace("%%filename%%",path.basename(argv._[0]));
+inputHtmlFiledata = inputHtmlFiledata.toString().replace("%%jsondata%%",input.toString());
 inputHtmlFiledata = inputHtmlFiledata.toString().replace("%%d3script%%",inputd3script.toString());
 inputHtmlFiledata = inputHtmlFiledata.toString().replace("%%mupcommon%%",inputmupscript.toString());
 inputHtmlFiledata = inputHtmlFiledata.toString().replace("%%mupstyle%%",inputmupstyle.toString());
