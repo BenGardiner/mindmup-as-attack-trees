@@ -4,6 +4,7 @@ import html2text
 from bs4 import BeautifulSoup
 import re
 import math
+import copy
 
 text_maker = html2text.HTML2Text()
 text_maker.body_width = 0 #disable random line-wrapping from html2text
@@ -179,16 +180,27 @@ def clear_once_with_deref(root_node):
 	root_node.update({'done': False})
 	return
 
+def is_node_not_for_lookup(node):
+	node_title = get_node_title(node)
+
+	if node_title.strip() == 'AND':
+		return True
+
+	if node_title.strip() == 'OR':
+		return True
+
+	if node_title == '...':
+		return True
+
+	return False
+
 def build_nodes_lookup(root):
 	nodes_lookup = dict()
 
 	def collect_all_nodes(node):
-		node_title = node.get('title', '')
+		node_title = get_node_title(node)
 
-		if node_title.strip() == 'AND':
-			return
-
-		if node_title == '...':
+		if is_node_not_for_lookup(node):
 			return
 
 		if is_node_a_reference(node):
@@ -200,6 +212,53 @@ def build_nodes_lookup(root):
 
 	apply_each_node(root, collect_all_nodes)
 	return nodes_lookup
+
+def groom_forward_references(root):
+	concrete_nodes_lookup = build_nodes_lookup(root)
+
+	has_been_seen = dict()
+
+	def maybe_swap(node):
+		if is_node_not_for_lookup(node):
+			return False
+
+		if not is_node_a_reference(node):
+			has_been_seen.update({get_node_title(node): node})
+			return False
+
+		node_referent_title = get_node_referent_title(node)
+
+		if not has_been_seen.get(node_referent_title) is None:
+			return False
+
+		forward_referent = concrete_nodes_lookup.get(node_referent_title)
+		if forward_referent is None:
+			return False
+
+		tmp = copy.deepcopy(node)
+		
+		node.clear()
+		node.update(forward_referent)
+
+		forward_referent.clear()
+		forward_referent.update(tmp)
+
+		concrete_nodes_lookup.update({node_referent_title: node})
+		has_been_seen.update({get_node_title(node): node})
+
+		for child in get_node_children(node):
+			apply_last_each_node(child, maybe_swap)
+
+		return True
+
+	def apply_last_each_node(root, fn):
+		for child in get_node_children(root):
+			apply_last_each_node(child, fn)
+		fn(root)
+		return
+
+	apply_last_each_node(root, maybe_swap)
+	return
 
 def detect_html(text):
 	return bool(BeautifulSoup(text, "html.parser").find())
