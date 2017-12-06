@@ -71,7 +71,6 @@ def do_node_firstpass(node):
 
 	#TODO ERROR no RISK_HERE:: node
 
-	#TODO Warn on reference to non subtree-root node (to ensure that re-used nodes are sufficiently abstracted to be their own section
 	return
 
 def is_node_weighted(node):
@@ -136,6 +135,11 @@ def do_node_secondpass(node, nodes_context):
 	if is_node_a_reference(node):
 		node_referent = get_node_referent(node, nodes_lookup)
 		node_referent_title=get_node_title(node_referent)
+
+		#TODO Warn on reference to non subtree-root node (to ensure that re-used nodes are sufficiently abstracted to be their own section
+		if not is_subtree(node_referent):
+			if (not is_attack_vector(node_referent)) and (not is_mitigation(node_referent)):
+				print("WARNING reference made to non-leaf non-subtree %s" % node_referent_title)
 
 		if (not get_node_weight(node_referent) is None) and (math.isnan(get_node_weight(node_referent))):
 			#is referent in-progress? then we have a loop. update the reference node with the identity of the tree reduction operation and return
