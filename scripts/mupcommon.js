@@ -131,7 +131,7 @@ function do_draw(node_rendering) {
     if(node_rendering){
         width1 = argv.width - margin.left - margin.right;
     }else{
-        width1 = max_depth*180 - margin.left - margin.right;
+        width1 = Math.max(max_depth*180 - margin.left - margin.right, 180 - margin.left - margin.right);
     }
 
     //if we are being run serverside, create svg instead of rendering one for browser
@@ -379,13 +379,12 @@ function do_draw(node_rendering) {
                 })
     .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
     .on("click", function(d,i){
-            if(!is_mitigation(d)){
+            if(!is_mitigation(d) && d !== root_node){
                 toggle(d);
                 svg.selectAll("*").remove();
+                do_draw(node_rendering);
             } else{
-                d.attr("visibility", "hidden");
             }
-            do_draw(node_rendering);
         })
 
         node.append("circle")
