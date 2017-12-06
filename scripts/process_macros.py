@@ -33,21 +33,18 @@ def foreach_node(node):
 
 def process_pass(node):
     foreach_node(node)
-    node_title = node.get('title', '')
-    ret = node_title.find("__M__") #check if there is Macro marking __M__
-    if ret >= 0:
+    node_title = get_node_title(node)
+    node_description = get_raw_description(node)
+    if node_title.find("__M__") >= 0 or node_description.find("__M__") >= 0:
         if display_list:
             print "====>",node_title
         else:
             key_name = get_key_name(node_title)
             for key in macros_lookup:
-                ret = node_title.find(key_name) #find Macro from dictionary
-                if ret >= 0:
-                    updated_title1 = node_title.replace(key_name,macros_lookup[key_name])
-                    updated_title2 = updated_title1.replace("__M__","")
-                    node['title'] = updated_title2
-                    break
-
+                if node_title.find(key_name) >= 0:
+                    set_node_title(node, node_title.replace(key_name,macros_lookup[key_name]).replace("__M__",""))
+                if node_description.find(key_name) >= 0:
+                    update_raw_description(node, node_description.replace(key_name,macros_lookup[key_name].replace("__M__","")))
 #parse cmd line and populate all pairs to dictionary
 
 fd_in = 0
