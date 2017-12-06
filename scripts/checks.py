@@ -32,6 +32,10 @@ def do_node_firstpass(node):
 		print("WARNING todo node: %s" % node_title)
 		return
 
+	if not node_title.find('XOR') == -1 or not get_raw_description(node).find('XOR') == -1:
+		print("WARNING XOR node: %s" % node_title)
+		return
+
 	if node_title == 'AND' or node_title == 'OR':
 		return
 
