@@ -759,6 +759,9 @@ def normalize_nodes(root_node):
 			if node.get('attr').get('collapsed') is False:
 				node.get('attr').pop('collapsed')
 			
+			if not node.get('attr').get('position') is None:
+				node.get('attr').pop('position')
+
 			if not node.get('attr').get('style') is None:
 				if len(node.get('attr').get('style')) == 0:
 					node.get('attr').pop('style')
