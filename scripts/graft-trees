@@ -50,6 +50,8 @@ def grafter(node):
 
 apply_each_node(root_node, grafter)
 
+groom_forward_references(root_node)
+dedup_with_references(root_node)
 normalize_nodes(root_node)
 str = json.dumps(data, indent=2, sort_keys=False)
 str = re.sub(r'\s+$', '', str, 0, re.M)

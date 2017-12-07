@@ -110,6 +110,13 @@ def is_objective(node):
 	raw_description = get_raw_description(node)
 	return 'OBJECTIVE::' in raw_description
 
+def apply_first_each_node(root, fn):
+	fn(root)
+	for child in get_node_children(root):
+		apply_first_each_node(child, fn)
+
+	return
+
 def apply_each_node(root, fn):
 	for child in get_node_children(root):
 		apply_each_node(child, fn)
@@ -279,7 +286,7 @@ def dedup_with_references(root):
 			set_node_title(node, new_title)
 
 	#TODO: warn if dedup'ing the bigger subtree
-	apply_each_node(root, maybe_dedup)
+	apply_first_each_node(root, maybe_dedup)
 	return
 
 def detect_html(text):

@@ -4,6 +4,7 @@ from mindmup_as_attack_trees import *
 import sys,json,getopt
 import re
 from collections import OrderedDict
+import copy
 
 macros_lookup={}
 
@@ -17,6 +18,12 @@ def get_key_name(macro):
         key = macro[5:]
     return key
 
+def apply_first_each_node(root, fn):
+    fn(root)
+    for child in get_node_children(root):
+        apply_first_each_node(child, fn)
+    return
+
 def select_child(node):
     node_title = get_node_title(node)
 
@@ -29,10 +36,30 @@ def select_child(node):
     key_name=get_key_name(macro)
     key_value=int(macros_lookup[key_name])
 
-    selected_child=get_node_children(node)[key_value]
+    selected_child=get_node_children(node).pop(key_value)
+
+    leaving_nodes = dict()
+    for leaving in get_node_children(node):
+        leaving_nodes.update(build_nodes_lookup(leaving))
+
+    def resolve_any(test):
+        if not is_node_a_reference(test):
+            return
+
+        potential_replacement = leaving_nodes.get(get_node_referent_title(test))
+        if not potential_replacement is None:
+            replacement = potential_replacement
+
+            test.clear()
+            test.update(copy.deepcopy(replacement))
+
+            for child in get_node_children(test):
+                apply_first_each_node(test, resolve_any)
+
+    apply_first_each_node(selected_child, resolve_any)
 
     node.clear()
-    node.update(selected_child)
+    node.update(copy.deepcopy(selected_child))
 
     return
 
@@ -105,10 +132,26 @@ if display_list:
     apply_each_node(root_node, process_pass)
     sys.exit()
 
+apply_first_each_node(root_node, select_child)
 apply_each_node(root_node, process_pass)
-apply_each_node(root_node, select_child)
 
-str = json.dumps(data, indent=2, sort_keys=True)
+count = 1
+def rectify_id(node):
+	global count
+
+	node_id = node.get("id", None)
+	if not node_id is None:
+		node.update({'id': count})
+		count = count + 1
+
+	return
+
+#groom_forward_references(root_node)
+dedup_with_references(root_node)
+
+apply_each_node(root_node, rectify_id)
+normalize_nodes(data)
+str = json.dumps(data, indent=2, sort_keys=False)
 fd_out.write(str)
 fd_out.close()
 
