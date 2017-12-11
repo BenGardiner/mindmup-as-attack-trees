@@ -64,7 +64,7 @@ Python scripts for using mindmup `.mup` JSON as a medium for developing attack t
 
     e.g. ```mkdir examples/steps/3_Report && cd examples/steps/3_Report && ../../../generate-descriptions-md-template < ../2_Compromise\ \(P\)RNG\ Somehow.mup > Report.md```
 
-1. for each of the subtree snapshot ```.mup``` files: render a .png file using ```rendermup```
+1. for each of the subtree snapshot ```.mup``` files: render a .png file using ```render_mup.js```
 
 1. add a risk analysis section to the report with ```generate-evita-chart.py```
 

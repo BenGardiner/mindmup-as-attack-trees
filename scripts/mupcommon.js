@@ -1,5 +1,7 @@
-var margin = {top: 10, right: 24, bottom: 22, left: 40};
-var argv = {height: -1, width: 2700, r: false};
+var margin = {top: 10, right: 24, bottom: 22, left: 200};
+var argv = {height: -1, width: 800, r: false};
+var levelwidth = 900;
+var set_textwidth = 350;
 var root;
 var svg;
 var root_node;
@@ -42,6 +44,7 @@ function is_all(d, predicate) {
 }
 
 function toggle(d){
+    if(d == root_node){return;}
         if(d.children){
                 d._children = d.children;
                 d.children = null;
@@ -49,6 +52,14 @@ function toggle(d){
                 d.children = d._children;
                 d._children = null;
         }
+}
+
+function hide(d){
+    if(d == root_node){return;}
+    if (d.children){
+        d._children = d.children;
+        d.children = null;
+    }
 }
 
 function is_attack_vector(d) {
@@ -60,6 +71,7 @@ function is_attack_vector(d) {
 }
 
 function is_reference(d) {
+    if (!d){return false;}
     return ( get_title(d).search("\\(\\*\\)") !== -1  ) || (/\(\d+\..*?\)/.test(get_title(d)));
 }
 
@@ -104,7 +116,7 @@ function do_draw(node_rendering) {
             })();
 
     // TextHeight Configuration
-    var text_line_height = 10 * 1.1;
+    var text_line_height = 10 * 2;
     var node_width_size;
     var node_height_size;
     var max_depth;
@@ -113,19 +125,23 @@ function do_draw(node_rendering) {
         root_node.each(function(d){
                 max_depth = Math.max(max_depth, d.depth);
                 });
+        if(node_rendering){
         available_text_width = Math.floor((argv.width - margin.left - margin.right) / (max_depth+1));
+        }else{
+            available_text_width = set_textwidth;
+        }
 
         node_width_size = available_text_width;
         //when not doing a dendrogram, the leaf nodes only get half the width for text
-        if (!argv.r) {
-            available_text_width = available_text_width / 2.0;
-        }
+        //if (!argv.r) {
+        //    available_text_width = available_text_width / 2.0;
+        //}
 
         max_text_height = 0;
         root_node.each(function(d){
                 if (argv.r && typeof d.children !== 'undefined') return;
 
-                approx_height = Math.ceil(approxTextWidth(d.data.title) / available_text_width) * text_line_height;
+                approx_height = Math.ceil(approxTextWidth(d.data.title) / available_text_width) * text_line_height* 1.2;
                 max_text_height = Math.max(max_text_height, approx_height);
                 });
         node_height_size = max_text_height;
@@ -139,9 +155,8 @@ function do_draw(node_rendering) {
     if(node_rendering){
         width1 = argv.width - margin.left - margin.right;
     }else{
-        width1 = Math.max(max_depth*180 - margin.left - margin.right, 180 - margin.left - margin.right);
+        width1 = Math.max((max_depth+1)*levelwidth - margin.left - margin.right);
     }
-
     //if we are being run serverside, create svg instead of rendering one for browser
     if (node_rendering){
         svg = node_rendering.createSVG();
@@ -220,14 +235,15 @@ function do_draw(node_rendering) {
 
             text_wrap_width = Math.min(text_wrap_width, d.y - d.parent.y);
             });
-    text_wrap_width = 0.9 * text_wrap_width;
+
+    text_wrap_width =  text_wrap_width;
 
     // In a dendrogram, give the leaf nodes more room -- but do it after sizing to *compensate* for the d3 rendering, not influence it.
     if (argv.r) {
         root_node.each(function(d){
-                if (typeof d.children === 'undefined') {
+                //if (typeof d.children === 'undefined') {
                 d.y = d.y - node_width_size / 2;
-                }
+                //}
                 });
     }
 
@@ -399,7 +415,6 @@ function do_draw(node_rendering) {
         })
 
         node.append("circle")
-        .filter(function (d) { return ! is_mitigation(d); })
         .style("stroke", function(d) {
                 if (typeof d.data.attr !== 'undefined')
                 return apt_colormap(d.data.attr.evita_apt);
@@ -431,7 +446,7 @@ function do_draw(node_rendering) {
             if (d.parent === null) {
             return "ideographic";
             }
-            return (is_attack_vector(d) || is_mitigation(d)) ? "baseline" : "hanging";
+                        return (is_attack_vector(d) || is_mitigation(d)) ? "baseline" : "hanging";
             })
     .style("fill", function(d){
         if (d._children == null || d._children == undefined){
@@ -441,9 +456,7 @@ function do_draw(node_rendering) {
         }
     })
     .text(function(d) { return d.data.title; })
-        .call(d3TextWrap, text_wrap_width, 0, 0);
-
-
+        .call(d3TextWrap, text_wrap_width*0.75, 0, 0);
 }
 
 function mup_init(filedata, svg_exported_object){
@@ -452,12 +465,19 @@ function mup_init(filedata, svg_exported_object){
         }
         root_node = d3.hierarchy(filedata, function(d) {
             if (typeof d.ideas === "undefined"){ return null; }
-            if (typeof d.attr !== "undefined" && typeof d.attr.collapsed !== "undefined" && d.attr.collapsed === true) { return null; }
             //sort(...) orders the ideas the same as the children are ordered in mindmup
             return Object.keys(d.ideas).sort(function(a,b) { return a - b; }).map(key => d.ideas[key]);
         });
         root_node.each(function(d){
+            //toggle(d);
+//            if (typeof d.attr !== "undefined" && typeof d.attr.collapsed !== "undefined" && d.attr.collapsed === true) { toggle(d); }
+            //hide(d);
             root_dict[get_title(d)] = d;
+        });
+        root_node.descendants().forEach(function(d){
+            if(d.data.attr.collapsed === true){
+            hide(d);
+            }
         });
 
         root = filedata;
