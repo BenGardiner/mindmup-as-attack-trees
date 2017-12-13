@@ -214,6 +214,9 @@ def print_other_headings(node, level, title, description):
 		elif description_line.strip().lower().endswith("Description:".lower()):
 			suppress_this_subsection=False
 			continue # skip Description: lines, all lines are emitted under a 'Attack Description' heading
+		elif "# Required Attack Potentials".lower() in description_line.lower():
+			suppress_this_subsection=False
+			continue # skip RAP headings lines. The rationale for the RAPs fits well in right next to the RAP table without a heading.
 		elif description_line.strip() == "":
 			if not previous_blank:
 				print(description_line)
