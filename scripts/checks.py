@@ -247,21 +247,7 @@ def remove_hidden(node):
 			remove_child(node, child)
 	return
 
-if args.mupin is None:
-        fd_out =sys.stdout
-else:
-        fd_in.close()
-        fd_out=open(args.mupin, 'w')
-
 apply_each_node(root_node, remove_hidden)
-normalize_nodes(root_node)
-str = json.dumps(data, indent=2, sort_keys=False)
-str = re.sub(r'\s+$', '', str, 0, re.M)
-str = re.sub(r'\s+$', '', str, flags=re.M)
-fd_out.write(str)
-
-if len(sys.argv) >= 1:
-        fd_out.close()
 
 do_children_firstpass(root_node)
 do_node_secondpass(root_node, nodes_context)
