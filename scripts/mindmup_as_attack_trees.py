@@ -301,12 +301,27 @@ def get_raw_description(node):
 	return description
 
 def update_raw_description(node, new_description):
+	note_present = not node.get('attr', dict()).get('note', dict()).get('text', '') is ''
+
+	attachment_present = not node.get('attr', dict()).get('attachment', dict()).get('content', '') is ''
+
 	#prefer the mindmup 2.0 'note' to the 1.0 'attachment'
-	description = node.get('attr', dict()).get('note', dict()).get('text', '')
-	if not description is '':
+	if (not note_present) and (not attachment_present):
+		#fall-back to the minmup 1.0 attachment
+		if node.get('attr') is None:
+			node.update({'attr': dict()})
+		if node.get('attr').get('attachment') is None:
+			node.get('attr').update({'attachment': dict()})
+		node.get('attr').get('attachment').update({'contentType': 'text/html'})
+		attachment_present = True
+
+	if note_present:
 		node.get('attr').get('note').update({'text': new_description})
-	else:
+
+	if attachment_present:
 		node.get('attr', dict()).get('attachment', dict()).update({'content': new_description})
+
+	return
 
 def get_unclean_description(node):
 	global text_maker
