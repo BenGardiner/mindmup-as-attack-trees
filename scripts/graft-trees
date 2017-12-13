@@ -46,6 +46,11 @@ def grafter(node):
 		graft_node = get_node_children(graft_root_node)[0]
 		node.clear()
 		node.update(graft_node)
+
+		new_raw_description = get_raw_description(node) + '<div></div><div>SUBTREE::</div>'
+		update_raw_description(node, new_raw_description)
+		set_background_color(node, "#000080")
+
 	return
 
 apply_each_node(root_node, grafter)

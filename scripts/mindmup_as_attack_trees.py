@@ -246,6 +246,9 @@ def groom_forward_references(root):
 		
 		node.clear()
 		node.update(forward_referent)
+		new_raw_description = get_raw_description(node) + '<div></div><div>SUBTREE::</div>'
+		update_raw_description(node, new_raw_description)
+		set_background_color(node, "#000080")
 
 		forward_referent.clear()
 		forward_referent.update(tmp)

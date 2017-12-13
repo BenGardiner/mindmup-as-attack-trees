@@ -52,6 +52,10 @@ def select_child(node):
 
             test.clear()
             test.update(copy.deepcopy(replacement))
+            #append SUBTREE:: to keep the intended visual breaking
+            new_raw_description = get_raw_description(test) + '<div></div><div>SUBTREE::</div>'
+            update_raw_description(test, new_raw_description)
+            set_background_color(test, "#000080")
 
             for child in get_node_children(test):
                 apply_first_each_node(test, resolve_any)
