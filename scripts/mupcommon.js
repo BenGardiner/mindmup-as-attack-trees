@@ -463,6 +463,11 @@ function mup_init(filedata, svg_exported_object){
         if(svg_exported_object){
             const d3 = require("d3");
         }
+
+        if (typeof filedata.id !== "undefined" && filedata['id'] === "root") { // handle >= v2.0 mindmups
+            filedata = filedata['ideas']['1'];
+        }
+
         root_node = d3.hierarchy(filedata, function(d) {
             if (typeof d.ideas === "undefined"){ return null; }
             //sort(...) orders the ideas the same as the children are ordered in mindmup
