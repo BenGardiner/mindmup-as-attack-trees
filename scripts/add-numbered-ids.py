@@ -31,7 +31,7 @@ def add_label(depth, node):
 	do_ideas(depth, node)
 	node_title = node.get('title', '')
 
-	if node_title.strip() == 'AND':
+	if node_title.strip() == 'AND' or node_title.strip() == 'OR':
 		return
 
 	if node_title == '...':
@@ -59,7 +59,7 @@ def process_secondpass(node):
 	foreach_node_secondpass(node)
 	node_title = node.get('title', '')
 
-	if node_title == 'AND':
+	if node_title.strip() == 'AND' or node_title.strip() == 'OR':
 		return
 
 	if node_title == '...':

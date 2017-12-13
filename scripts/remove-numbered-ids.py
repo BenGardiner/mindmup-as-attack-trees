@@ -11,7 +11,7 @@ def do_ideas(node):
 def trim_label(node):
 	do_ideas(node)
 
-	if node.get('title', None) == 'AND':
+	if node.get('title', None) == 'AND' or node.get('title', None) == 'OR':
 		return
 
 	if node.get('title', None) == '...':
