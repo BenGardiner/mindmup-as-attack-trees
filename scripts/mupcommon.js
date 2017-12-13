@@ -449,7 +449,7 @@ function do_draw(node_rendering) {
                         return (is_attack_vector(d) || is_mitigation(d)) ? "baseline" : "hanging";
             })
     .style("fill", function(d){
-        if (d._children == null || d._children == undefined){
+        if (d._children == null || d._children == undefined){ // TODO test d.data.attr.collapsed instead
             return "normal";
         }else{
             return "purple";
