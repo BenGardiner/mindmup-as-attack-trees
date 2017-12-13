@@ -399,7 +399,6 @@ def resolve_all_text_node_references(description, nodes_lookup):
 		reference = re.sub(r'\*(.*?) \(\*\)\*', r'\1', match).strip()
 		referent_node = nodes_lookup.get(reference, None)
 		if not referent_node is None:
-			sys.stderr.write('resolving description reference: %s\n' % reference)
 			if not referent_node.get('coords') is None:
 				coords = referent_node.get('coords')
 			else:
