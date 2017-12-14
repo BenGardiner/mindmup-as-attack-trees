@@ -6,7 +6,7 @@ var root;
 var svg;
 var root_node;
 var root_dict = [];
-const d3exp =require("d3");
+const d3exp = require("d3");
 
 function get_raw_description(d) {
     var description = ((d.data.attr || {}).note || {}).text || '';
@@ -37,8 +37,8 @@ function is_all(d, predicate) {
 
     result = true;
     d.children.forEach(function(d) {
-            result = result & predicate(d);
-            });
+        result = result & predicate(d);
+    });
 
     return result;
 }
@@ -86,21 +86,15 @@ function is_out_of_scope(d) {
     return /out of scope/i.test(get_raw_description(d));
 }
 
-function get_node_from_idea(idea){
-
-}
-
-
-
 ///-- start D3 code
 function do_draw(node_rendering) {
-    //Wow, this is embarrassing. Please look away!
-    // 'works' only for 10pt sans-serif, here, when stars are properly aligned
     if(node_rendering){
        d3 = d3exp;
     }
+    //Wow, this is embarrassing. Please look away!
+    // 'works' only for 10pt sans-serif, here, when stars are properly aligned
     var approxTextWidth = (function() {
-            function charW(w, c) {
+        function charW(w, c) {
             if (c == 'W' || c == 'M') w += 15;
             else if (c == 'w' || c == 'm') w += 12;
             else if (c == 'I' || c == 'i' || c == 'l' || c == 't' || c == 'f') w += 4;
@@ -108,12 +102,12 @@ function do_draw(node_rendering) {
             else if (c == c.toUpperCase()) w += 12;
             else w += 10;
             return w;
-            }
+        }
 
-            return function(s) {
+        return function(s) {
             return s.split('').reduce(charW, 0) / 2;
-            };
-            })();
+        };
+    })();
 
     // TextHeight Configuration
     var text_line_height = 10 * 2;
@@ -161,7 +155,7 @@ function do_draw(node_rendering) {
     if (node_rendering){
         svg = node_rendering.createSVG();
     }else{
-    svg = d3.select("svg"), width = +svg.attr("width"),
+        svg = d3.select("svg"), width = +svg.attr("width"),
         height = +svg.attr("height"),
         g = svg.append("g").attr("transform", "translate(" + (width/2 + 40 + "," + (height / 2 + 90) + ")"));
     }
@@ -456,7 +450,7 @@ function do_draw(node_rendering) {
         }
     })
     .text(function(d) { return d.data.title; })
-        .call(d3TextWrap, text_wrap_width*0.75, 0, 0);
+    .call(d3TextWrap, text_wrap_width*0.75, 0, 0);
 }
 
 function mup_init(filedata, svg_exported_object){
