@@ -86,11 +86,21 @@ function is_attack_vector(d) {
 }
 
 function is_reference(d) {
-    return ( get_title(d).search("\\(\\*\\)") !== -1  ) || (/\(\d+\..*?\)/.test(get_title(d)));
+    return ( /\(\*\)/.test(get_title(d)) || /(\(\d+\..*?\))/.test(get_title(d)));
 }
 
 function get_referent(d) {
-    referent_node_title = get_title(d).replace("\\(\\*\\)","").trim();
+    title = get_title(d);
+
+    if (/\(\*\)/.test(title)) {
+        referent_node_title = title.replace(/\(\*\)/,"").trim();
+    } else if (/(\(\d+\..*?\))/.test(title)) {
+        coords = title.match(/(\(\d+\..*?\))/)[0];
+        coords = coords.replace(/\(/, "").replace(/\)/,"");
+        referent_node_title = coords + " " + title.replace(/(\(\d+\..*?\))/,"").trim(); //FIXME; does create referent title
+    } else {
+        return null;
+    }
     return root_dict[referent_node_title];
 }
 
