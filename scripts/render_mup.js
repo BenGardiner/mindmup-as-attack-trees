@@ -45,17 +45,12 @@ mindmup_json = JSON.parse(input);
 //width = 2100;
 markup = '<div id="container"><div id="chart"></div></div>';
 //markup = '<meta http-equiv="refresh" content="3">' + markup;
-var options = {selector:'#chart', svgStyles:styles, container:markup, d3Module:d3};
-
-var d3n = new D3Node(options);
 //console.log("__dirname: "+__dirname);
 //console.log(buffer.toString());
-mup.mup_init(mindmup_json, d3n);
 
 /// -- end D3 code
 
 // create output files
-const svg2png = require('svg2png');
 inputHtmlFiledata = inputHtmlFiledata.toString().replace("%%jsondata%%",input.toString());
 inputHtmlFiledata = inputHtmlFiledata.toString().replace("%%d3script%%",inputd3script.toString());
 inputHtmlFiledata = inputHtmlFiledata.toString().replace("%%mupcommon%%",inputmupscript.toString());
@@ -64,15 +59,20 @@ fs.writeFile(outputHtmlFilename, inputHtmlFiledata, function () {
   console.log('>> Done. Open '+outputHtmlFilename+'" in a web browser');
 });
 
-var svg_string = d3n.svgString();
-fs.writeFile(outputSvgFilename, svg_string, function () {
-  console.log('>> Exported: "'+outputSvgFilename+'"');
-});
-
-var svgBuffer = new Buffer(svg_string, 'utf-8');
-//console.log(d3n.width);
-//console.log(svgBuffer.toString());
-svg2png(svgBuffer,  {width: d3n.width*4})
-  .then(buffer => fs.writeFile(outputPngFilename, buffer))
-  .catch(e => console.error('ERR:', e))
-  .then(err => console.log('>> Exported: "'+outputPngFilename+'"'));
+// var options = {selector:'#chart', svgStyles:styles, container:markup, d3Module:d3};
+// 
+// var d3n = new D3Node(options);
+// mup.mup_init(mindmup_json, d3n);
+// const svg2png = require('svg2png');
+// var svg_string = d3n.svgString();
+// fs.writeFile(outputSvgFilename, svg_string, function () {
+//   console.log('>> Exported: "'+outputSvgFilename+'"');
+// });
+// 
+// var svgBuffer = new Buffer(svg_string, 'utf-8');
+// //console.log(d3n.width);
+// //console.log(svgBuffer.toString());
+// svg2png(svgBuffer,  {width: d3n.width*4})
+//   .then(buffer => fs.writeFile(outputPngFilename, buffer))
+//   .catch(e => console.error('ERR:', e))
+//   .then(err => console.log('>> Exported: "'+outputPngFilename+'"'));
