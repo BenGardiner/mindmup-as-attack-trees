@@ -35,6 +35,7 @@ const styles = fs.readFileSync(path.join(__dirname, './mupstyle.css'));
 const input = fs.readFileSync(argv._[0], 'utf8');
 inputHtmlFiledata = fs.readFileSync(path.join(__dirname, 'webstub.html'));
 inputd3script = fs.readFileSync(path.join(__dirname, 'd3.v4.min.js'));
+inputd3keybindingscript = fs.readFileSync(path.join(__dirname, 'deps.js/keybinding.js'));
 inputmupscript = fs.readFileSync(path.join(__dirname, 'mupcommon.js'));
 inputmupstyle = fs.readFileSync(path.join(__dirname, 'mupstyle.css'));
 const outputHtmlFilename = path.basename(argv._[0], ".mup") + ".html";
@@ -45,9 +46,6 @@ mindmup_json = JSON.parse(input);
 //width = 2100;
 markup = '<div id="container"><div id="chart"></div></div>';
 //markup = '<meta http-equiv="refresh" content="3">' + markup;
-//console.log("__dirname: "+__dirname);
-//console.log(buffer.toString());
-
 /// -- end D3 code
 
 // create output files
@@ -55,6 +53,7 @@ inputHtmlFiledata = inputHtmlFiledata.toString().replace("%%jsondata%%",input.to
 inputHtmlFiledata = inputHtmlFiledata.toString().replace("%%d3script%%",inputd3script.toString());
 inputHtmlFiledata = inputHtmlFiledata.toString().replace("%%mupcommon%%",inputmupscript.toString());
 inputHtmlFiledata = inputHtmlFiledata.toString().replace("%%mupstyle%%",inputmupstyle.toString());
+inputHtmlFiledata = inputHtmlFiledata.toString().replace("%%keybinding%%",inputd3keybindingscript.toString());
 fs.writeFile(outputHtmlFilename, inputHtmlFiledata, function () {
   console.log('>> Done. Open '+outputHtmlFilename+'" in a web browser');
 });

@@ -402,6 +402,10 @@ function do_draw(node_rendering) {
         return arrLineCreatedCount;
     }
 
+    function redraw() {
+        svg.selectAll("*").remove();
+        do_draw(node_rendering);
+    }
 
     var node = svg.selectAll(".node")
         .data(root_node.descendants())
@@ -434,8 +438,7 @@ function do_draw(node_rendering) {
             if(!is_mitigation(d) && d !== root_node){
                 toggle(d);
                 svg.selectAll("*").remove();
-                do_draw(node_rendering);
-            } else{
+                redraw();
             }
         })
 
@@ -482,6 +485,15 @@ function do_draw(node_rendering) {
     })
     .text(function(d) { return d.data.title; })
     .call(d3TextWrap, text_wrap_width*0.75, 0, 0);
+
+    d3.select('body').call(d3.keybinding()
+        .on('a', function() {
+            root_node.each(function(d) {
+                show(d);
+            });
+            redraw();
+            //TODO: re-center on root_node
+        }));
 }
 
 function mup_init(filedata, svg_exported_object){
