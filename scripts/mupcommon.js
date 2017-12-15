@@ -114,7 +114,7 @@ function is_reference_oos(d){
 }
 
 function is_out_of_scope(d) {
-    return /out of scope/i.test(get_raw_description(d));
+    return /out_of_scope/i.test(get_raw_description(d));
 }
 
 ///-- start D3 code
@@ -411,30 +411,35 @@ function do_draw(node_rendering) {
         .data(root_node.descendants())
         .enter().append("g")
         .attr("class", function(d) {
-                if (is_attack_vector(d)) {
+            if (is_attack_vector(d)) {
                 if (is_reference(d)) {
-                    if(is_reference_oss(d)){
-                        return "node node--vector_ref_oos"
+                    if (is_reference_oos(d)) {
+                        return "node node--vector_ref-oos";
                     }
-                return "node node--vector_ref";
-                } else if (is_out_of_scope(d)) {
-                return "node node--vector_oos";
+                    return "node node--vector_ref";
                 } else {
-                return "node node--vector";
+                    if (is_out_of_scope(d)) {
+                        return "node node--vector-oos";
+                    }
+                    return "node node--vector";
                 }
-                } else if (is_mitigation(d)) {
+            } else if (is_mitigation(d)) {
                 if (is_reference(d)) {
-                return "node node--mitigation_ref";
+                    if (is_reference_oos(d)) {
+                        return "node node--mitigation_ref-oos";
+                    }
+                    return "node node--mitigation_ref";
                 } else {
-                return "node node--mitigation";
+                    if (is_out_of_scope(d)) {
+                        return "node node--mitigation-oos";
+                    }
+                    return "node node--mitigation";
                 }
-                } else {
-                return "node node--internal";
-                }
-                return "node node--internal"; 
-                })
-    .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
-    .on("click", function(d,i){
+            } //TODO: style for collapsed nodes
+            return "node node--internal";
+        })
+        .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
+        .on("click", function(d,i){ // colin
             if(!is_mitigation(d) && d !== root_node){
                 toggle(d);
                 svg.selectAll("*").remove();

@@ -10,7 +10,19 @@
   font: 10px sans-serif;
 }
 
-.node--vector_oos text {
+.node--vector-oos text {
+  text-decoration: line-through;
+}
+
+.node--vector_ref-oos text {
+  text-decoration: line-through;
+}
+
+.node--mitigation-oos text {
+  text-decoration: line-through;
+}
+
+.node--mitigation_ref-oos text {
   text-decoration: line-through;
 }
 
@@ -28,20 +40,11 @@
   fill: #FFF;
 }
 
-.node--mitigation_
-
-.node--vector_ref_oos text {
-  text-decoration: line-through;
-}
-.node--vector_oos circle {
+.node--mitigation circle {
   fill: #000;
 }
 
-.node--mitigation rect {
-  fill: #000;
-}
-
-.node--mitigation_ref rect {
+.node--mitigation_ref circle {
   stroke: #000;
   fill: #FFF;
 }
