@@ -53,13 +53,13 @@ function is_all(d, predicate) {
 
 function toggle(d){
     if(d == root_node){return;}
-        if(d.children){
-                d._children = d.children;
-                d.children = null;
-        }else{
-                d.children = d._children;
-                d._children = null;
-        }
+    if(d.children){
+        d._children = d.children;
+        d.children = null;
+    }else{
+        d.children = d._children;
+        d._children = null;
+    }
 }
 
 function hide(d){
@@ -67,6 +67,13 @@ function hide(d){
     if (d.children){
         d._children = d.children;
         d.children = null;
+    }
+}
+
+function show(d) {
+    if (d._children){
+        d.children = d._children;
+        d._children = null;
     }
 }
 
@@ -79,15 +86,21 @@ function is_attack_vector(d) {
 }
 
 function is_reference(d) {
-    if (!d){return false;}
     return ( get_title(d).search("\\(\\*\\)") !== -1  ) || (/\(\d+\..*?\)/.test(get_title(d)));
 }
 
-function is_reference_oss(node){
-    //console.log(get_title(node));
-    //console.log(get_title(node).replace("(*)","").trim());
-    //console.log(root_dict[get_title(node).replace("(*)","").trim()]);
-    return is_reference(root_dict[get_title(node).replace("\\(\\*\\)","").trim()]);
+function get_referent(d) {
+    referent_node_title = get_title(d).replace("\\(\\*\\)","").trim();
+    return root_dict[referent_node_title];
+}
+
+function is_reference_oos(d){
+    referent = get_referent(d);
+    if (!referent) {
+        console.log("error: missing node referent for node: " + get_title(d));
+        return false;
+    }
+    return is_out_of_scope(referent);
 }
 
 function is_out_of_scope(d) {
