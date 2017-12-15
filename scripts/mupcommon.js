@@ -23,7 +23,15 @@ function get_title(d) {
     return d.data.title || '';
 }
 
+function get_children(data) {
+    if (typeof data.ideas === "undefined" || data.ideas == null) { return [] }
+
+    //sort(...) orders the ideas the same as the children are ordered in mindmup
+    return Object.keys(data.ideas).sort(function(a,b) { return a - b; }).map(key => data.ideas[key].node);
+}
+
 function is_leaf(d) {
+    //TODO test get_children(d.data) != null
     return typeof d.children === 'undefined';
 }
 
@@ -32,11 +40,11 @@ function is_mitigation(d) {
 }
 
 function is_all(d, predicate) {
-    if (typeof d.children === 'undefined') return True;
-    if (d.children == null){return true;}
-
     result = true;
-    d.children.forEach(function(d) {
+
+    d_children = get_children(d.data);
+
+    d_children.forEach(function(d) {
         result = result & predicate(d);
     });
 
@@ -466,6 +474,9 @@ function mup_init(filedata, svg_exported_object){
             if (typeof d.ideas === "undefined"){ return null; }
             //sort(...) orders the ideas the same as the children are ordered in mindmup
             return Object.keys(d.ideas).sort(function(a,b) { return a - b; }).map(key => d.ideas[key]);
+        });
+        root_node.each(function(d){
+            d.data.node = d;
         });
         root_node.each(function(d){
             //toggle(d);
