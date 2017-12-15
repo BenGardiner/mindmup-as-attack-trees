@@ -31,12 +31,12 @@ const argv = yargs
     .help(false)
     .argv;
 
-const styles = fs.readFileSync("./mupstyle.css");
+const styles = fs.readFileSync(path.join(__dirname, './mupstyle.css'));
 const input = fs.readFileSync(argv._[0], 'utf8');
-inputHtmlFiledata = fs.readFileSync("webstub.html");
-inputd3script = fs.readFileSync("d3.v4.min.js");
-inputmupscript = fs.readFileSync("mupcommon.js");
-inputmupstyle = fs.readFileSync("mupstyle.css");
+inputHtmlFiledata = fs.readFileSync(path.join(__dirname, 'webstub.html'));
+inputd3script = fs.readFileSync(path.join(__dirname, 'd3.v4.min.js'));
+inputmupscript = fs.readFileSync(path.join(__dirname, 'mupcommon.js'));
+inputmupstyle = fs.readFileSync(path.join(__dirname, 'mupstyle.css'));
 const outputHtmlFilename = path.basename(argv._[0], ".mup") + ".html";
 const outputSvgFilename = path.basename(argv._[0], ".mup") + ".svg";
 const outputPngFilename = path.basename(argv._[0], ".mup") + ".png";
