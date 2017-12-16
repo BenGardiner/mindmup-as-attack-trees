@@ -1,4 +1,4 @@
-var margin = {top: 10, right: 24, bottom: 22, left: 200};
+var margin = {top: 10, right: 24, bottom: 22, left: 40};
 var argv = {height: -1, width: 800, r: false};
 var levelwidth = 900;
 var set_textwidth = 350;
