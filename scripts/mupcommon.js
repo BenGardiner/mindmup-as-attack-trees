@@ -151,8 +151,8 @@ function do_draw(node_rendering) {
                 max_depth = Math.max(max_depth, d.depth);
                 });
         if(node_rendering){
-        available_text_width = Math.floor((argv.width - margin.left - margin.right) / (max_depth+1));
-        }else{
+            available_text_width = Math.floor((argv.width - margin.left - margin.right) / (max_depth+1));
+        } else {
             available_text_width = set_textwidth;
         }
 
