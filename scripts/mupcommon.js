@@ -261,32 +261,32 @@ function do_draw(node_rendering) {
             text_wrap_width = Math.min(text_wrap_width, d.y - d.parent.y);
             });
 
-    text_wrap_width =  text_wrap_width;
+    text_wrap_width = 0.9 * text_wrap_width;
 
     // In a dendrogram, give the leaf nodes more room -- but do it after sizing to *compensate* for the d3 rendering, not influence it.
     if (argv.r) {
         root_node.each(function(d){
-                //if (typeof d.children === 'undefined') {
+            if (typeof d.children === 'undefined') {
                 d.y = d.y - node_width_size / 2;
-                //}
-                });
+            }
+        });
     }
 
     // In a dendrogram, bump the next sibling of blocks with looooong text
     if (argv.r) {
         root_node.each(function(d){
-                if (typeof d.children !== 'undefined') return;
-                if (d.parent === null) return;
+            if (typeof d.children !== 'undefined') return;
+            if (d.parent === null) return;
 
-                text_line_count = Math.ceil(approxTextWidth(d.data.title) / text_wrap_width);
-                text_height = text_line_height * text_line_count;
+            text_line_count = Math.ceil(approxTextWidth(d.data.title) / text_wrap_width);
+            text_height = text_line_height * text_line_count;
 
-                d.parent.children.forEach(function(child){
-                        if (child.x > d.x && child.x < d.x + text_height) {
-                        child.x = child.x + text_line_height;
-                        }
-                        });
-                });
+            d.parent.children.forEach(function(child){
+                if (child.x > d.x && child.x < d.x + text_height) {
+                    child.x = child.x + text_line_height;
+                }
+            });
+        });
     }
 
     // a colormap for EVITA attack probability total where 1 is remote and 5 is highly likely
@@ -296,64 +296,64 @@ function do_draw(node_rendering) {
             .range(['#add8e6','#a3eb92','#ffd700','#ffce69','#ffc0cb'])
             .domain([min+1*d,min+2*d,min+3*d,min+4*d,min+5*d]);
     }(1,5);
+
     var link = svg.selectAll(".link")
         .data(tree_data)
         .enter().append("path")
         .attr("class", "link")
         .style("stroke", function(d) {
-                if (typeof d.parent.data.attr !== 'undefined' &&
-                        typeof d.parent.data.attr.evita_apt !== 'undefined' &&
-                        typeof d.data.attr !== 'undefined' &&
-                        typeof d.data.attr.evita_apt !== 'undefined') {
+            if (typeof d.parent.data.attr !== 'undefined' &&
+                typeof d.parent.data.attr.evita_apt !== 'undefined' &&
+                typeof d.data.attr !== 'undefined' &&
+                typeof d.data.attr.evita_apt !== 'undefined') {
                 return apt_colormap(d.data.attr.evita_apt);
-                }
-                })
-    .attr("d", function(d) {
+            }
+        })
+        .attr("d", function(d) {
             elbow_point = (d.parent.y + 6*(d.y - d.parent.y) / 10);
 
             if (argv.r) {
-            elbow_point = d.parent.y;
+                elbow_point = d.parent.y;
 
-            if (d.parent.parent === null) {
-            var min_y = d.y;
-            d.parent.children.forEach(function(entry){
-                    min_y = Math.min(min_y, entry.y);
+                if (d.parent.parent === null) {
+                    var min_y = d.y;
+                    d.parent.children.forEach(function(entry){
+                        min_y = Math.min(min_y, entry.y);
                     });
-            elbow_point = (d.parent.y + (min_y - d.parent.y) / 2);
-            }
+                    elbow_point = (d.parent.y + (min_y - d.parent.y) / 2);
+                }
             }
 
             var this_childs_index = 0.0;
             var siblings_count = 0.0;
             if (d.parent !== null) {
-            var count = 0;
-            siblings_count = d.parent.children.length;
-            d.parent.children.forEach(function(entry){
+                var count = 0;
+                siblings_count = d.parent.children.length;
+                d.parent.children.forEach(function(entry){
                     count = count + 1;
                     if (entry == d && d.parent.children.length > 1) {
-                    this_childs_index = (count - siblings_count / 2.0 - 0.5) * 2.0;
+                        this_childs_index = (count - siblings_count / 2.0 - 0.5) * 2.0;
                     }
-                    });
+                });
             }
             return "M" + d.parent.y + "," + d.parent.x
                 + "l" + Math.abs(this_childs_index) + "," + this_childs_index
                 + "H" + elbow_point
                 + "V" + d.x + "H" + d.y;
-    });
+        });
 
-
-    function d3TextWrap(text, width) {
-        var arrLineCreatedCount = [];
-        text.each(function() {
+        function d3TextWrap(text, width) {
+            var arrLineCreatedCount = [];
+            text.each(function() {
                 var text = d3.select(this),
                 words = text.text().split(/[ \f\n\r\t\v]+/).reverse(), //Don't cut non-breaking space (\xA0), as well as the Unicode characters \u00A0 \u2028 \u2029)
-                word,
-                line = [],
-                lineNumber = 0,
-                lineHeight = 1.05, //Ems
-                x = text.attr("x"),
-                y = text.attr("y"),
-                createdLineCount = 1; //Total line created count
+                    word,
+                    line = [],
+                    lineNumber = 0,
+                    lineHeight = 1.05, //Ems
+                    x = text.attr("x"),
+                    y = text.attr("y"),
+                    createdLineCount = 1; //Total line created count
                 var textAlign = text.style('text-anchor') || 'left';
                 var alignmentBase = text.style('alignment-baseline') || 'baseline';
                 var adjusted_width = width;
@@ -449,49 +449,49 @@ function do_draw(node_rendering) {
 
         node.append("circle")
         .style("stroke", function(d) {
-                if (typeof d.data.attr !== 'undefined')
+            if (typeof d.data.attr !== 'undefined')
                 return apt_colormap(d.data.attr.evita_apt);
-                })
-    .attr("r", 2.5);
+        })
+        .attr("r", 2.5);
 
-    node.append("rect")
+        node.append("rect")
         .filter(function (d) { return is_mitigation(d); })
         .style("stroke", function(d) {
-                if (typeof d.data.attr !== 'undefined')
+            if (typeof d.data.attr !== 'undefined')
                 return apt_colormap(d.data.attr.evita_apt);
-                })
-    .attr("width", 5.0)
+        })
+        .attr("width", 5.0)
         .attr("heigth", 5.0);
 
-    node.append("text")
+        node.append("text")
         .attr("dy", 3)
         .attr("x", function(d) { return d.children ? -8 : 8; })
         .style("text-anchor", function(d) {
-                if (d.parent === null) {
+            if (d.parent === null) {
                 return "start";
-                }
-                return (is_attack_vector(d) || is_mitigation(d)) ? "start" : "middle";
-                })
-    .style("alignment-baseline", function(d) {
+            }
+            return (is_attack_vector(d) || is_mitigation(d)) ? "start" : "middle";
+        })
+        .style("alignment-baseline", function(d) {
             if (d.data.title === "AND") {
-            return "middle";
+                return "middle";
             }
             if (d.parent === null) {
-            return "ideographic";
+                return "ideographic";
             }
-                        return (is_attack_vector(d) || is_mitigation(d)) ? "baseline" : "hanging";
-            })
-    .style("fill", function(d){
-        if (d._children == null || d._children == undefined){ // TODO test d.data.attr.collapsed instead
-            return "normal";
-        }else{
-            return "purple";
-        }
-    })
-    .text(function(d) { return d.data.title; })
-    .call(d3TextWrap, text_wrap_width*0.75, 0, 0);
+            return (is_attack_vector(d) || is_mitigation(d)) ? "baseline" : "hanging";
+        })
+        .style("fill", function(d){
+            if (d._children == null || d._children == undefined){ // TODO test d.data.attr.collapsed instead
+                return "normal";
+            }else{
+                return "purple";
+            }
+        })
+        .text(function(d) { return d.data.title; })
+        .call(d3TextWrap, text_wrap_width*0.75, 0, 0);
 
-    d3.select('body').call(d3.keybinding()
+        d3.select('body').call(d3.keybinding()
         .on('a', function() {
             root_node.each(function(d) {
                 show(d);
