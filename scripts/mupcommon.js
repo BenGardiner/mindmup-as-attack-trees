@@ -141,7 +141,7 @@ function do_draw(node_rendering) {
     })();
 
     // TextHeight Configuration
-    var text_line_height = 10 * 2;
+    var text_line_height = 10 * 1.1;
     var node_width_size;
     var node_height_size;
     var max_depth;
@@ -158,9 +158,9 @@ function do_draw(node_rendering) {
 
         node_width_size = available_text_width;
         //when not doing a dendrogram, the leaf nodes only get half the width for text
-        //if (!argv.r) {
-        //    available_text_width = available_text_width / 2.0;
-        //}
+        if (!argv.r) {
+            available_text_width = available_text_width / 2.0;
+        }
 
         max_text_height = 0;
         root_node.each(function(d){
@@ -178,9 +178,9 @@ function do_draw(node_rendering) {
 
 
     if(node_rendering){
-        width1 = argv.width - margin.left - margin.right;
+        width = argv.width - margin.left - margin.right;
     }else{
-        width1 = Math.max((max_depth+1)*levelwidth - margin.left - margin.right);
+        width = (max_depth+1)*levelwidth - margin.left - margin.right;
     }
     //if we are being run serverside, create svg instead of rendering one for browser
     if (node_rendering){
@@ -188,7 +188,7 @@ function do_draw(node_rendering) {
     }else{
         svg = d3.select("svg"), width = +svg.attr("width"),
         height = +svg.attr("height"),
-        g = svg.append("g").attr("transform", "translate(" + (width/2 + 40 + "," + (height / 2 + 90) + ")"));
+        g = svg.append("g").attr("transform", "translate(" + (width/2 + margin.left + "," + (height / 2 + margin.top) + ")"));
     }
     var tree_maker;
     if (argv.r) {
@@ -240,7 +240,7 @@ function do_draw(node_rendering) {
             });
 
     height = max_x + node_height_size;
-    total_width = width1 + margin.left + margin.right;
+    total_width = width + margin.left + margin.right;
     total_height = height + margin.top + margin.bottom;
     if(node_rendering){
         node_rendering.width = total_width;
