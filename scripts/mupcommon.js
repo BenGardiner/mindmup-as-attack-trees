@@ -51,6 +51,11 @@ function is_all(d, predicate) {
     return result;
 }
 
+function is_collapsed(d) {
+    // TODO test d.data.attr.collapsed instead
+    return d._children != null && d.children == null;
+}
+
 function toggle(d){
     if(d == root_node){return;}
     if(d.children){
@@ -245,7 +250,7 @@ function do_draw(node_rendering) {
     if(node_rendering){
         node_rendering.width = total_width;
     }
-    
+
     // Create the main container
     svg = svg
         .attr("width", total_width)
@@ -454,6 +459,11 @@ function do_draw(node_rendering) {
         })
         .attr("r", 2.5);
 
+        collapsed_nodes = svg.selectAll(".node").filter(function(d){ return is_collapsed(d); });
+        collapsed_nodes.append("circle").attr("r",2.5).attr("cy", 2.0).attr("cx", 2.0).attr("class", "node node--internal")
+        collapsed_nodes.append("circle").attr("r",2.5).attr("cy", 1.0).attr("cx", 1.0).attr("class", "node node--internal")
+        collapsed_nodes.append("circle").attr("r",2.5).attr("cy", 0.0).attr("cx", 0.0).attr("class", "node node--internal");
+
         node.append("rect")
         .filter(function (d) { return is_mitigation(d); })
         .style("stroke", function(d) {
@@ -480,13 +490,6 @@ function do_draw(node_rendering) {
                 return "ideographic";
             }
             return (is_attack_vector(d) || is_mitigation(d)) ? "baseline" : "hanging";
-        })
-        .style("fill", function(d){
-            if (d._children == null || d._children == undefined){ // TODO test d.data.attr.collapsed instead
-                return "normal";
-            }else{
-                return "purple";
-            }
         })
         .text(function(d) { return d.data.title; })
         .call(d3TextWrap, text_wrap_width*0.75, 0, 0);
