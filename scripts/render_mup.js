@@ -8,7 +8,7 @@ const yargs = require('yargs');
 const mup = require('./mupcommon.js');
 var margin = {top: 10, right: 24, bottom: 22, left: 40};
 const argv = yargs
-    .usage(`rendermup input.mup`)
+    .usage(`rendermup input.mup template.html`)
     .demand(1)
     .option("w", {
         alias: "width",
@@ -33,14 +33,12 @@ const argv = yargs
 
 const styles = fs.readFileSync(path.join(__dirname, './mupstyle.css'));
 const input = fs.readFileSync(argv._[0], 'utf8');
-inputHtmlFiledata = fs.readFileSync(path.join(__dirname, 'webstub.html'));
+inputHtmlFiledata = fs.readFileSync(argv._[1]);
 inputd3script = fs.readFileSync(path.join(__dirname, 'd3.v4.min.js'));
 inputd3keybindingscript = fs.readFileSync(path.join(__dirname, 'deps.js/keybinding.js'));
 inputmupscript = fs.readFileSync(path.join(__dirname, 'mupcommon.js'));
 inputmupstyle = fs.readFileSync(path.join(__dirname, 'mupstyle.css'));
-const outputHtmlFilename = path.basename(argv._[0], ".mup") + ".html";
-const outputSvgFilename = path.basename(argv._[0], ".mup") + ".svg";
-const outputPngFilename = path.basename(argv._[0], ".mup") + ".png";
+const outputHtmlFilename = argv._[1];
 
 mindmup_json = JSON.parse(input);
 //width = 2100;
