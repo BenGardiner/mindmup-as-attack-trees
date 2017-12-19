@@ -6,7 +6,11 @@ import re
 from collections import OrderedDict
 import math
 import ipdb
+import argparse
+parser = argparse.ArgumentParser()
 
+parser.add_argument('mupin', nargs='?', help="The mindmup file that will be processed")
+args = parser.parse_args() 
 def info(type, value, tb):
     ipdb.pm()
 
@@ -15,6 +19,7 @@ def info(type, value, tb):
 levels_count = dict()
 nodes_lookup = dict()
 fixups_queue = list()
+objective_node =None
 
 def do_children_firstpass(node):
 	for child in get_node_children(node):
@@ -221,13 +226,12 @@ def do_node_checkinfs(node, nodes_context):
 
 	return
 
-if len(sys.argv) < 2:
-	fd_in=sys.stdin
+if args.mupin is None:
+        fd_in = stdin
 else:
 	fd_in=open(sys.argv[1], 'r')
 
 data = json.load(fd_in)
-fd_in.close()
 
 nodes_context=list()
 
