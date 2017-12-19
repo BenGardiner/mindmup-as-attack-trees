@@ -1,7 +1,7 @@
 var margin = {top: 10, right: 24, bottom: 22, left: 40};
 var argv = {height: -1, width: 800, r: false};
-var levelwidth = 900;
-var set_textwidth = 350;
+var set_textwidth = 210;
+var levelwidth = set_textwidth * 1.5;
 var root;
 var svg;
 var root_node;
@@ -185,15 +185,16 @@ function do_draw(node_rendering) {
     if(node_rendering){
         width = argv.width - margin.left - margin.right;
     }else{
-        width = (max_depth+1)*levelwidth - margin.left - margin.right;
+        width = (max_depth)*levelwidth - margin.left - margin.right;
     }
     //if we are being run serverside, create svg instead of rendering one for browser
     if (node_rendering){
         svg = node_rendering.createSVG();
     }else{
-        svg = d3.select("svg"), width = +svg.attr("width"),
-        height = +svg.attr("height"),
-        g = svg.append("g").attr("transform", "translate(" + (width/2 + margin.left + "," + (height / 2 + margin.top) + ")"));
+        svg = d3.select("svg"),
+        svg_width = +svg.attr("width"),
+        svg_height = +svg.attr("height"),
+        g = svg.append("g").attr("transform", "translate(" + (svg_width/2 + margin.left + "," + (svg_height / 2 + margin.top) + ")"));
     }
     var tree_maker;
     if (argv.r) {
