@@ -413,6 +413,10 @@ function do_draw(node_rendering) {
         do_draw(node_rendering);
     }
 
+    function is_offscreen(d) {
+        return d.y < window.pageXOffset || d.x < window.pageYOffset || d.y > window.pageXOffset + window.innerWidth || d.x > window.pageYOffset + window.innerHeight;
+    }
+
     var node = svg.selectAll(".node")
         .data(root_node.descendants())
         .enter().append("g")
@@ -446,10 +450,36 @@ function do_draw(node_rendering) {
         })
         .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
         .on("click", function(d,i){ // colin
-            if(!is_mitigation(d) && d !== root_node){
-                toggle(d);
+
+            if(!is_leaf(d) && d !== root_node){
+                d3.select(this).transition().style("fill", "white").duration(200).transition().style("fill", "black").duration(100).on("end", function() {
+                    toggle(d);
+                    svg.selectAll("*").remove();
+                    redraw();
+                    if (is_offscreen(d)) {
+                        window.scrollTo(d.y - margin.left, d.x - window.approx_height / 2.0);
+                    }
+                    r = d;
+                    svg.selectAll("text").filter(function(d) { return d == r; })
+                    .transition().style("fill", "white").duration(200).transition().style("fill", "black").duration(100)
+                    .transition().style("fill", "white").duration(200).transition().style("fill", "black").duration(100);
+                });
+            } else if (is_reference(d)) {
+                r = get_referent(d);
+
+                cursor = r;
+                while (cursor.parent !== undefined && cursor.parent != null) {
+                    show(cursor);
+                    cursor = cursor.parent
+                }
+
                 svg.selectAll("*").remove();
                 redraw();
+                window.scrollTo(r.y - margin.left, r.x - window.approx_height / 2.0);
+                svg.selectAll("text").filter(function(d) { return d == r; })
+                .transition().style("fill", "white").duration(200).transition().style("fill", "black").duration(100)
+                .transition().style("fill", "white").duration(200).transition().style("fill", "black").duration(100)
+                .transition().style("fill", "white").duration(200).transition().style("fill", "black").duration(100);
             }
         })
 
@@ -501,7 +531,7 @@ function do_draw(node_rendering) {
                 show(d);
             });
             redraw();
-            //TODO: re-center on root_node
+            window.scrollTo(root_node.y, root_node.x);
         }));
 }
 
