@@ -583,8 +583,8 @@ function mup_init(filedata, svg_exported_object){
             root_dict[get_title(d)] = d;
         });
         root_node.descendants().forEach(function(d){
-            if(d.data.attr.collapsed === true){
-            hide(d);
+            if(typeof d.data.attr !== "undefined" && d.data.attr.collapsed === true){
+                hide(d);
             }
         });
 
