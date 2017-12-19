@@ -414,7 +414,18 @@ function do_draw(node_rendering) {
     }
 
     function is_offscreen(d) {
-        return d.y < window.pageXOffset || d.x < window.pageYOffset || d.y > window.pageXOffset + window.innerWidth || d.x > window.pageYOffset + window.innerHeight;
+        relative_svg_bb = d3.select("#container").node().getBoundingClientRect();
+        return d.y + relative_svg_bb.left + pageXOffset < window.pageXOffset
+            || d.x + relative_svg_bb.top + pageYOffset < window.pageYOffset
+            || d.y + relative_svg_bb.left + pageXOffset > window.pageXOffset + window.innerWidth
+            || d.x + relative_svg_bb.top + pageYOffset > window.pageYOffset + window.innerHeight;
+    }
+
+    function scroll_to(d) {
+        relative_svg_bb = d3.select("#container").node().getBoundingClientRect();
+        target_pageXOffset = d.y + relative_svg_bb.left + pageXOffset;
+        target_pageYOffset = d.x + relative_svg_bb.top + pageYOffset;
+        window.scrollTo(target_pageXOffset - margin.left, target_pageYOffset - window.innerHeight / 2.0);
     }
 
     var node = svg.selectAll(".node")
@@ -457,8 +468,9 @@ function do_draw(node_rendering) {
                     svg.selectAll("*").remove();
                     redraw();
                     if (is_offscreen(d)) {
-                        window.scrollTo(d.y - margin.left, d.x - window.approx_height / 2.0);
+                        scroll_to(d);
                     }
+                    //TODO wait until redraw is complete (sometimes redraws are really really slow
                     r = d;
                     svg.selectAll("text").filter(function(d) { return d == r; })
                     .transition().style("fill", "white").duration(200).transition().style("fill", "black").duration(100)
@@ -475,7 +487,7 @@ function do_draw(node_rendering) {
 
                 svg.selectAll("*").remove();
                 redraw();
-                window.scrollTo(r.y - margin.left, r.x - window.approx_height / 2.0);
+                scroll_to(r);
                 svg.selectAll("text").filter(function(d) { return d == r; })
                 .transition().style("fill", "white").duration(200).transition().style("fill", "black").duration(100)
                 .transition().style("fill", "white").duration(200).transition().style("fill", "black").duration(100)
@@ -543,7 +555,7 @@ function do_draw(node_rendering) {
                 show(d);
             });
             redraw();
-            window.scrollTo(root_node.y, root_node.x);
+            scroll_to(root_node);
         }));
 }
 
