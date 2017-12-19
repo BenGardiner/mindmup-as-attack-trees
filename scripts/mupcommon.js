@@ -476,7 +476,7 @@ function do_draw(node_rendering) {
                     .transition().style("fill", "white").duration(200).transition().style("fill", "black").duration(100)
                     .transition().style("fill", "white").duration(200).transition().style("fill", "black").duration(100);
                 });
-            } else if (is_reference(d)) {
+            } else if (is_reference(d) && !is_mitigation(d)) {
                 r = get_referent(d);
 
                 cursor = r;
