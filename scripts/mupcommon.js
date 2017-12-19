@@ -31,7 +31,7 @@ function get_children(data) {
 }
 
 function is_leaf(d) {
-    //TODO test get_children(d.data) != null
+    //TODO test get_children(d.data).length == 0
     return typeof d.children === 'undefined';
 }
 
@@ -445,7 +445,7 @@ function do_draw(node_rendering) {
                     }
                     return "node node--mitigation";
                 }
-            } //TODO: style for collapsed nodes
+            }
             return "node node--internal";
         })
         .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
