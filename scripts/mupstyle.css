@@ -49,6 +49,16 @@
   fill: #FFF;
 }
 
+.node--mitigation rect {
+  stroke: #00d300;
+  fill:   #00ff00;
+}
+
+.node--mitigation_ref rect {
+  stroke: #00d300;
+  fill:   none;
+}
+
 .link {
   fill: none;
   stroke: #d3d3d3;

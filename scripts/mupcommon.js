@@ -483,7 +483,9 @@ function do_draw(node_rendering) {
             }
         })
 
-        node.append("circle")
+        svg.selectAll(".node")
+        .filter( function(d) { return !is_mitigation(d) && ! is_collapsed(d); })
+        .append("circle")
         .style("stroke", function(d) {
             if (typeof d.data.attr !== 'undefined')
                 return apt_colormap(d.data.attr.evita_apt);
@@ -491,18 +493,28 @@ function do_draw(node_rendering) {
         .attr("r", 2.5);
 
         collapsed_nodes = svg.selectAll(".node").filter(function(d){ return is_collapsed(d); });
-        collapsed_nodes.append("circle").attr("r",2.5).attr("cy", 2.0).attr("cx", 2.0).attr("class", "node node--internal")
-        collapsed_nodes.append("circle").attr("r",2.5).attr("cy", 1.0).attr("cx", 1.0).attr("class", "node node--internal")
-        collapsed_nodes.append("circle").attr("r",2.5).attr("cy", 0.0).attr("cx", 0.0).attr("class", "node node--internal");
-
-        node.append("rect")
-        .filter(function (d) { return is_mitigation(d); })
+        collapsed_nodes.append("circle").attr("r",2.5).attr("cy", 1.0).attr("cx", 3.0).attr("class", "node node--internal")
         .style("stroke", function(d) {
             if (typeof d.data.attr !== 'undefined')
                 return apt_colormap(d.data.attr.evita_apt);
-        })
+        });
+        collapsed_nodes.append("circle").attr("r",2.5).attr("cy", 0.5).attr("cx", 1.5).attr("class", "node node--internal")
+        .style("stroke", function(d) {
+            if (typeof d.data.attr !== 'undefined')
+                return apt_colormap(d.data.attr.evita_apt);
+        });
+        collapsed_nodes.append("circle").attr("r",2.5).attr("cy", 0.0).attr("cx", 0.0).attr("class", "node node--internal")
+        .style("stroke", function(d) {
+            if (typeof d.data.attr !== 'undefined')
+                return apt_colormap(d.data.attr.evita_apt);
+        });
+
+        svg.selectAll(".node")
+        .filter(function (d) { return is_mitigation(d); })
+        .append("rect")
+        .attr("y", -2.5)
         .attr("width", 5.0)
-        .attr("heigth", 5.0);
+        .attr("height", 5.0);
 
         node.append("text")
         .attr("dy", 3)
