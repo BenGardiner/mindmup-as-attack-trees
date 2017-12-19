@@ -4,12 +4,16 @@ import html2text
 from bs4 import BeautifulSoup
 import re
 import math
+import copy
 
 text_maker = html2text.HTML2Text()
 text_maker.body_width = 0 #disable random line-wrapping from html2text
 
+def get_sorted_ideas(node):
+	return OrderedDict(sorted(node.get('ideas', dict()).iteritems(), key=lambda t: float(t[0])))
+
 def get_node_children(node):
-	return OrderedDict(sorted(node.get('ideas', dict()).iteritems(), key=lambda t: float(t[0]))).values()
+	return get_sorted_ideas(node).values()
 
 def remove_child(parent, node):
 	children = parent.get('ideas', dict())
@@ -19,6 +23,7 @@ def remove_child(parent, node):
 	return
 
 def is_node_a_leaf(node):
+	#TODO: speed optimization: test the length of the unsorted .values() of 'ideas'
 	return len(get_node_children(node)) == 0
 
 def node_has_description(node):
@@ -51,6 +56,28 @@ def is_outofscope(node):
 	raw_description = get_raw_description(node)
 	return ( "out of scope".lower() in raw_description.lower() ) or ( 'OUT_OF_SCOPE::' in raw_description )
 
+def set_background_color(node, webcolor):
+	if not 'attr' in node:
+		node.update({'attr': dict()})
+	if not 'style' in node.get('attr'):
+		node.get('attr').update({'style': dict()})
+	node.get('attr').get('style').update({'background': webcolor})
+	return
+
+def set_collapsed_state(node, state):
+	if not 'attr' in node:
+		node.update({'attr': dict()})
+	node.get('attr').update({'collapsed': state})
+	return
+
+def set_collapsed(node):
+	set_collapsed_state(node, True)
+	return
+
+def set_expanded(node):
+	set_collapsed_state(node, False)
+	return
+
 def is_collapsed(node):
 	return node.get('attr', dict()).get('collapsed', False)
 
@@ -82,6 +109,13 @@ def is_attack_vector(node):
 def is_objective(node):
 	raw_description = get_raw_description(node)
 	return 'OBJECTIVE::' in raw_description
+
+def apply_first_each_node(root, fn):
+	fn(root)
+	for child in get_node_children(root):
+		apply_first_each_node(child, fn)
+
+	return
 
 def apply_each_node(root, fn):
 	for child in get_node_children(root):
@@ -153,16 +187,27 @@ def clear_once_with_deref(root_node):
 	root_node.update({'done': False})
 	return
 
+def is_node_not_for_lookup(node):
+	node_title = get_node_title(node)
+
+	if node_title.strip() == 'AND':
+		return True
+
+	if node_title.strip() == 'OR':
+		return True
+
+	if node_title == '...':
+		return True
+
+	return False
+
 def build_nodes_lookup(root):
 	nodes_lookup = dict()
 
 	def collect_all_nodes(node):
-		node_title = node.get('title', '')
+		node_title = get_node_title(node)
 
-		if node_title.strip() == 'AND':
-			return
-
-		if node_title == '...':
+		if is_node_not_for_lookup(node):
 			return
 
 		if is_node_a_reference(node):
@@ -174,6 +219,78 @@ def build_nodes_lookup(root):
 
 	apply_each_node(root, collect_all_nodes)
 	return nodes_lookup
+
+def groom_forward_references(root):
+	concrete_nodes_lookup = build_nodes_lookup(root)
+
+	has_been_seen = dict()
+
+	def maybe_swap(node):
+		if is_node_not_for_lookup(node):
+			return False
+
+		if not is_node_a_reference(node):
+			has_been_seen.update({get_node_title(node): node})
+			return False
+
+		node_referent_title = get_node_referent_title(node)
+
+		if not has_been_seen.get(node_referent_title) is None:
+			return False
+
+		forward_referent = concrete_nodes_lookup.get(node_referent_title)
+		if forward_referent is None:
+			return False
+
+		tmp = copy.deepcopy(node)
+		
+		node.clear()
+		node.update(forward_referent)
+		new_raw_description = get_raw_description(node) + '<div></div><div>SUBTREE::</div>'
+		update_raw_description(node, new_raw_description)
+		set_background_color(node, "#000080")
+
+		forward_referent.clear()
+		forward_referent.update(tmp)
+
+		concrete_nodes_lookup.update({node_referent_title: node})
+		has_been_seen.update({get_node_title(node): node})
+
+		for child in get_node_children(node):
+			apply_last_each_node(child, maybe_swap)
+
+		return True
+
+	def apply_last_each_node(root, fn):
+		for child in get_node_children(root):
+			apply_last_each_node(child, fn)
+		fn(root)
+		return
+
+	apply_last_each_node(root, maybe_swap)
+	return
+
+def dedup_with_references(root):
+	has_been_seen = dict()
+
+	def maybe_dedup(node):
+		if is_node_not_for_lookup(node):
+			return
+
+		if not is_node_a_reference(node):
+			if has_been_seen.get(get_node_title(node)) is None:
+				has_been_seen.update({get_node_title(node): node})
+				return
+
+			node.update({'ideas': dict()})
+			set_background_color(node, '#FFFFFF')
+			update_raw_description(node, '')
+			new_title=get_node_reference_title(node)
+			set_node_title(node, new_title)
+
+	#TODO: warn if dedup'ing the bigger subtree
+	apply_first_each_node(root, maybe_dedup)
+	return
 
 def detect_html(text):
 	return bool(BeautifulSoup(text, "html.parser").find())
@@ -187,12 +304,27 @@ def get_raw_description(node):
 	return description
 
 def update_raw_description(node, new_description):
+	note_present = not node.get('attr', dict()).get('note', dict()).get('text', '') is ''
+
+	attachment_present = not node.get('attr', dict()).get('attachment', dict()).get('content', '') is ''
+
 	#prefer the mindmup 2.0 'note' to the 1.0 'attachment'
-	description = node.get('attr', dict()).get('note', dict()).get('text', '')
-	if not description is '':
+	if (not note_present) and (not attachment_present):
+		#fall-back to the minmup 1.0 attachment
+		if node.get('attr') is None:
+			node.update({'attr': dict()})
+		if node.get('attr').get('attachment') is None:
+			node.get('attr').update({'attachment': dict()})
+		node.get('attr').get('attachment').update({'contentType': 'text/html'})
+		attachment_present = True
+
+	if note_present:
 		node.get('attr').get('note').update({'text': new_description})
-	else:
+
+	if attachment_present:
 		node.get('attr', dict()).get('attachment', dict()).update({'content': new_description})
+
+	return
 
 def get_unclean_description(node):
 	global text_maker
@@ -239,9 +371,14 @@ def get_node_referent_title(node):
 
 def get_node_reference_title(node):
 	title = node.get('title','')
-	parsed_title = re.match(r'(\d+\..*?)\s(.*?)$',title).groups()
 
-	wip_reference_title = "%s (%s)" % (parsed_title[1], parsed_title[0])
+	matches = re.match(r'^(\d+\..*?)\s(.*?)$',title)
+	if matches is None:
+		wip_reference_title = "%s (*)" % title
+	else:
+		parsed_title = matches.groups()
+		wip_reference_title = "%s (%s)" % (parsed_title[1], parsed_title[0])
+
 	return wip_reference_title
 
 def is_node_a_reference(node):
@@ -265,7 +402,6 @@ def resolve_all_text_node_references(description, nodes_lookup):
 		reference = re.sub(r'\*(.*?) \(\*\)\*', r'\1', match).strip()
 		referent_node = nodes_lookup.get(reference, None)
 		if not referent_node is None:
-			sys.stderr.write('resolving description reference: %s\n' % reference)
 			if not referent_node.get('coords') is None:
 				coords = referent_node.get('coords')
 			else:
@@ -593,4 +729,74 @@ def get_probability_label(evita_probability):
 	else:
 		return "unknown"
 
+def normalize_nodes(root_node):
+	def fix_titles(root):
+		def title_strip(node):
+			title = get_node_title(node)
 
+			if title is '':
+				return
+
+			title = re.sub(r'\n+', ' ', title)
+			title = re.sub(r'\s+', ' ', title)
+			title = re.sub(r'\s+$', '', title)
+
+			set_node_title(node, title)
+			return
+
+		apply_each_node(root, title_strip)
+		return
+
+	def sort_children(node):
+		if not is_node_a_leaf(node):
+			node.update({ 'ideas': get_sorted_ideas(node) })
+		return
+
+	def order_children_contents(node):
+		if not is_node_a_leaf(node):
+			for v,child in node.get('ideas').iteritems():
+				ordered_child = OrderedDict()
+
+				if not child.get('title') is None:
+					ordered_child.update({'title': child.pop('title')})
+
+				if not child.get('attr') is None:
+					ordered_attr = OrderedDict()
+					if not child.get('attr').get('attachment') is None:
+						ordered_attr.update({'attachment': child.get('attr').pop('attachment')})
+
+					ordered_attr.update(child.pop('attr')) # everything else
+					ordered_child.update({'attr':  ordered_attr})
+
+				if not child.get('ideas') is None:
+					ordered_child.update({'ideas': child.pop('ideas')})
+
+				if not child.get('id') is None:
+					ordered_child.update({'id': child.pop('id')})
+
+				ordered_child.update(child) # everything else
+				node.get('ideas').update({ v: ordered_child})
+		return
+
+	def remove_superfluous_members(node):
+		if not node.get('attr') is None:
+			if node.get('attr').get('collapsed') is False:
+				node.get('attr').pop('collapsed')
+			
+			if not node.get('attr').get('position') is None:
+				node.get('attr').pop('position')
+
+			if not node.get('attr').get('style') is None:
+				if len(node.get('attr').get('style')) == 0:
+					node.get('attr').pop('style')
+
+			if len(node.get('attr')) == 0:
+				node.pop('attr')
+		return
+
+	nodes = root_node
+	fix_titles(nodes)
+	apply_each_node(nodes,remove_superfluous_members)
+	apply_each_node(nodes, order_children_contents)
+	apply_each_node(nodes, sort_children)
+	return nodes

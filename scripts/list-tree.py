@@ -44,13 +44,12 @@ if 'id' in data and data['id'] == 'root':
 else:
 	root_node = data
 
-def remove_hidden(node):
-	for child in get_node_children(node):
-		if get_node_title(child) == '.hidden':
-			remove_child(node, child)
+def list_non_mitigation(node):
+	if not is_mitigation(node):
+		print("%s" % get_node_title(node))
 	return
 
-apply_each_node(root_node, remove_hidden)
+apply_each_node(root_node, list_non_mitigation)
 
 normalize_nodes(root_node)
 str = json.dumps(data, indent=2, sort_keys=False)

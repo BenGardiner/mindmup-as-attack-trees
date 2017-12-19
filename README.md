@@ -75,3 +75,9 @@ Python scripts for using mindmup `.mup` JSON as a medium for developing attack t
 # Calculation of Combined Attack Probability and Risk
 
 By adding tags to the mindmup text you can structure the attack tree to include attacker objectives with associated severities and attack vectors with associated required attack potentials. Then the scripts will calculate and propagate the required attack potentials up the tree and marry them with the severities to estimate risks. This calculation is performed according to the method detailed in [*Security requirements for automotive on-board networks based on dark-side scenarios*](https://rieke.link/EVITAD2.3v1.1.pdf)
+
+# Other Scripts
+
+| Script Name | Description |
+|-------------|-------------|
+| `forward-references.py` | re-orders the nodes so that all concrete subtrees occur before references to those subtrees |

@@ -3,21 +3,11 @@
 import sys,json
 from mindmup_as_attack_trees import *
 
-def fix_titles(root):
-	def title_strip(node):
-		title = get_node_title(node)
+import ipdb
+def info(type, value, tb):
+	ipdb.pm()
 
-		if title is '':
-			return
-
-		title = re.sub(r'\n+', ' ', title)
-		title = re.sub(r'\s+$', '', title)
-
-		set_node_title(node, title)
-		return
-
-	apply_each_node(root, title_strip)
-	return
+sys.excepthook = info
 
 if len(sys.argv) < 2:
 	fd_in=sys.stdin
@@ -38,9 +28,9 @@ if 'id' in data and data['id'] == 'root':
 else:
 	root_node = data
 
-fix_titles(root_node)
+normalize_nodes(root_node)
 
-str = json.dumps(data, indent=2, sort_keys=True)
+str = json.dumps(data, indent=2, sort_keys=False)
 str = re.sub(r'\s+$', '', str, 0, re.M)
 str = re.sub(r'\s+$', '', str, flags=re.M)
 
@@ -49,4 +39,3 @@ fd_out.write(str)
 if len(sys.argv) >= 1:
 	fd_out.close()
 
-#TODO: sort title above description and attr

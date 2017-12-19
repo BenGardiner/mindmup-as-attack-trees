@@ -36,7 +36,7 @@ nodes_lookup = dict()
 def nodes_lookup_flat_builder(node):
 	node_title = node.get('title', '')
 
-	if node_title.strip() == 'AND':
+	if node_title.strip() == 'AND' or node_title.strip() == 'OR':
 		return
 
 	if node_title == '...':

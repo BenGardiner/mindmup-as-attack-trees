@@ -1,0 +1,18 @@
+#!/bin/bash
+
+die () {
+	echo "$@"
+	exit 1
+}
+
+pngfile="${1}"
+
+height="$(exiftool -b -ImageHeight "${pngfile}")"
+width="$(exiftool -b -ImageWidth "${pngfile}")"
+
+max_height="$(echo ${width} | awk '{ print int( $1 / 8.0 * 10.5 ) }')"
+
+if test ${height} -gt ${max_height}; then
+	echo "ERROR: ${pngfile} height ${height} is too tall"
+	convert -crop ${width}x${max_height} "${pngfile}" "${pngfile}"
+fi
