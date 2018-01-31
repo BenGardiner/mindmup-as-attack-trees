@@ -463,16 +463,22 @@ do_draw = function(json) {
           if (d.parent === null) {
             return "start";
           }
-          return (is_attack_vector(d) || is_mitigation(d)) ? "start" : "middle";
+          if (is_leaf(d)) {
+            return "start";
+          }
+          return "middle";
       })
       .style("alignment-baseline", function(d) {
-          if (d.data.title === "AND") {
+          if (d.data.title === "AND" || d.data.title === "OR") {
             return "middle";
           }
           if (d.parent === null) {
             return "ideographic";
           }
-          return (is_attack_vector(d) || is_mitigation(d)) ? "baseline" : "hanging";
+          if (is_leaf(d)) {
+            return "baseline";
+          }
+          return "hanging";
       })
       .text(function(d) { return d.data.title; })
       .call(d3TextWrap, text_wrap_width, 0, 0);
