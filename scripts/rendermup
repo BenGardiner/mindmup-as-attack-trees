@@ -411,7 +411,8 @@ do_draw = function(json) {
   }
 
   function is_out_of_scope(d) {
-    return /out of scope/i.test(get_raw_description(d));
+    description = get_raw_description(d);
+    return (/out of scope/i.test(description) || /OUT_OF_SCOPE::/.test(description));
   }
 
   var node = g.selectAll(".node")
