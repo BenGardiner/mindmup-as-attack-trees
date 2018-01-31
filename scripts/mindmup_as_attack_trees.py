@@ -301,6 +301,7 @@ def get_raw_description(node):
 	if description is '':
 		description = node.get('attr', dict()).get('attachment', dict()).get('content', '')
 
+	description = description.encode('ascii','ignore')
 	return description
 
 def update_raw_description(node, new_description):
