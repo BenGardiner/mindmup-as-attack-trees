@@ -38,7 +38,7 @@ inputd3script = fs.readFileSync(path.join(__dirname, 'd3.v4.min.js'));
 inputd3keybindingscript = fs.readFileSync(path.join(__dirname, 'deps.js/keybinding.js'));
 inputmupscript = fs.readFileSync(path.join(__dirname, 'mupcommon.js'));
 inputmupstyle = fs.readFileSync(path.join(__dirname, 'mupstyle.css'));
-const outputHtmlFilename = argv._[1];
+const outputHtmlFilename = argv._[0].substring(0, argv._[0].lastIndexOf('.'))+ ".html";
 
 mindmup_json = JSON.parse(input);
 //width = 2100;
