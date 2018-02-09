@@ -31,7 +31,7 @@ def add_label(depth, node):
 	do_ideas(depth, node)
 	node_title = node.get('title', '')
 
-	if node_title.strip() == 'AND':
+	if node_title.strip() == 'AND' or node_title.strip() == 'OR':
 		return
 
 	if node_title == '...':
@@ -59,7 +59,7 @@ def process_secondpass(node):
 	foreach_node_secondpass(node)
 	node_title = node.get('title', '')
 
-	if node_title == 'AND':
+	if node_title.strip() == 'AND' or node_title.strip() == 'OR':
 		return
 
 	if node_title == '...':
@@ -119,7 +119,8 @@ do_ideas(depth, root_node)
 foreach_node_secondpass(root_node)
 foreach_node_thirdpass(root_node)
 
-str = json.dumps(data, indent=2, sort_keys=True)
+normalize_nodes(root_node)
+str = json.dumps(data, indent=2, sort_keys=False)
 str = re.sub(r'\s+$', '', str, 0, re.M)
 str = re.sub(r'\s+$', '', str, flags=re.M)
 

@@ -44,13 +44,17 @@ if 'id' in data and data['id'] == 'root':
 else:
 	root_node = data
 
-def remove_hidden(node):
-	for child in get_node_children(node):
-		if get_node_title(child) == '.hidden':
-			remove_child(node, child)
+def collapse_if_objective(node):
+	if is_objective(node) and not is_node_a_leaf(node):
+		if not 'attr' in node:
+			node.update({'attr': dict()})
+		if not is_all_children(node, lambda n: get_node_title(n) == 'TODO'):
+			set_collapsed(node)
+		else:
+			set_expanded(node)
 	return
 
-apply_each_node(root_node, remove_hidden)
+apply_each_node(root_node, collapse_if_objective)
 
 normalize_nodes(root_node)
 str = json.dumps(data, indent=2, sort_keys=False)

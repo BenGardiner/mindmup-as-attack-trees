@@ -343,7 +343,8 @@ if not args.only_severities:
 	propagate_all_the_apts(root_node, nodes_lookup)
 	derive_node_risks(root_node)
 
-str = json.dumps(data, indent=2, sort_keys=True)
+normalize_nodes(root_node)
+str = json.dumps(data, indent=2, sort_keys=False)
 str = re.sub(r'\s+$', '', str, 0, re.M)
 str = re.sub(r'\s+$', '', str, flags=re.M)
 

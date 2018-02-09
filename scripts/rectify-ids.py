@@ -57,7 +57,8 @@ def rectify_id(node):
 
 apply_each_node(root_node, rectify_id)
 
-str = json.dumps(data, indent=2, sort_keys=True)
+normalize_nodes(root_node)
+str = json.dumps(data, indent=2, sort_keys=False)
 str = re.sub(r'\s+$', '', str, 0, re.M)
 str = re.sub(r'\s+$', '', str, flags=re.M)
 

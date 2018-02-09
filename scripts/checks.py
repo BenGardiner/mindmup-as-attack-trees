@@ -6,7 +6,11 @@ import re
 from collections import OrderedDict
 import math
 import ipdb
+import argparse
+parser = argparse.ArgumentParser()
 
+parser.add_argument('mupin', nargs='?', help="The mindmup file that will be processed")
+args = parser.parse_args() 
 def info(type, value, tb):
     ipdb.pm()
 
@@ -15,6 +19,7 @@ def info(type, value, tb):
 levels_count = dict()
 nodes_lookup = dict()
 fixups_queue = list()
+objective_node =None
 
 def do_children_firstpass(node):
 	for child in get_node_children(node):
@@ -28,10 +33,15 @@ def do_node_firstpass(node):
 
 	node_title = node.get('title', '')
 
-	if not node_title.find('TODO') == -1:
+	if not node_title.find('TODO') == -1 or not get_raw_description(node).find('TODO') == -1:
 		print("WARNING todo node: %s" % node_title)
+		return
 
-	if node_title == 'AND':
+	if not node_title.find('XOR') == -1 or not get_raw_description(node).find('XOR') == -1:
+		print("WARNING XOR node: %s" % node_title)
+		return
+
+	if node_title == 'AND' or node_title == 'OR':
 		return
 
 	if is_node_a_reference(node):
@@ -47,9 +57,6 @@ def do_node_firstpass(node):
 	if (not is_node_a_reference(node)) and is_attack_vector(node) and get_raw_description(node).find('EVITA::') == -1:
 		print("ERROR attack vector node is missing RAP assignment: %s" % node_title)
 
-	if (not is_node_a_reference(node)) and is_attack_vector(node) and (not get_raw_description(node).find('EVITA:: |0|0|0|0|0|0|0|0|0') == -1) and (not is_outofscope(node)):
-		print("ERROR attack vector node is in-scope and has trivial RAP: %s" % node_title)
-
 	if (not is_node_a_reference(node)) and is_attack_vector(node):
 		mitigations = collect_all(node, is_mitigation)
 		if len(mitigations) == 0:
@@ -57,6 +64,9 @@ def do_node_firstpass(node):
 
 	if is_objective(node) and (not is_outofscope(node)) and get_raw_description(node).find('EVITA::') == -1:
 		print("ERROR Objective node w/o EVITA:: marker: %s" % node_title)
+
+	if not is_outofscope(node) and is_attack_vector(node) and not node_title.find('(Locally-Permitted)') == -1:
+	    print("WARNING overconstrained node: attack vector node with (Locally-Permitted): %s" % node_title)
 
 	#TODO WARNING Node with explicit (Out of Scope) label
 
@@ -66,7 +76,6 @@ def do_node_firstpass(node):
 
 	#TODO ERROR no RISK_HERE:: node
 
-	#TODO Warn on reference to non subtree-root node (to ensure that re-used nodes are sufficiently abstracted to be their own section
 	return
 
 def is_node_weighted(node):
@@ -131,6 +140,11 @@ def do_node_secondpass(node, nodes_context):
 	if is_node_a_reference(node):
 		node_referent = get_node_referent(node, nodes_lookup)
 		node_referent_title=get_node_title(node_referent)
+
+		#TODO Warn on reference to non subtree-root node (to ensure that re-used nodes are sufficiently abstracted to be their own section
+		if not is_subtree(node_referent):
+			if (not is_attack_vector(node_referent)) and (not is_mitigation(node_referent)):
+				print("WARNING reference made to non-leaf non-subtree %s" % node_referent_title)
 
 		if (not get_node_weight(node_referent) is None) and (math.isnan(get_node_weight(node_referent))):
 			#is referent in-progress? then we have a loop. update the reference node with the identity of the tree reduction operation and return
@@ -212,13 +226,12 @@ def do_node_checkinfs(node, nodes_context):
 
 	return
 
-if len(sys.argv) < 2:
-	fd_in=sys.stdin
+if args.mupin is None:
+        fd_in = stdin
 else:
 	fd_in=open(sys.argv[1], 'r')
 
 data = json.load(fd_in)
-fd_in.close()
 
 nodes_context=list()
 
