@@ -76,6 +76,8 @@ Python scripts for using mindmup `.mup` JSON as a medium for developing attack t
 
 By adding tags to the mindmup text you can structure the attack tree to include attacker objectives with associated severities and attack vectors with associated required attack potentials. Then the scripts will calculate and propagate the required attack potentials up the tree and marry them with the severities to estimate risks. This calculation is performed according to the method detailed in [*Security requirements for automotive on-board networks based on dark-side scenarios*](https://rieke.link/EVITAD2.3v1.1.pdf)
 
+The 5 scores of Required Attack Parameters are based on the vulnerability assessment section of [*Common Methodology for Information Technology Security Evaluation (CEM v3.1)](https://www.commoncriteriaportal.org/files/ccfiles/CEMV3.1R3.pdf) 
+
 # Other Scripts
 
 | Script Name | Description |
