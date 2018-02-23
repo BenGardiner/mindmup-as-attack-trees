@@ -34,6 +34,7 @@ const input = fs.readFileSync(argv._[0], 'utf8');
 const outputHtmlFilename = path.basename(argv._[0], ".mup") + ".html";
 const outputSvgFilename = path.basename(argv._[0], ".mup") + ".svg";
 const outputPngFilename = path.basename(argv._[0], ".mup") + ".png";
+const outputPdfFilename = path.basename(argv._[0], ".mup") + ".png";
 
 const styles = `
 
@@ -496,11 +497,10 @@ do_draw(mindmup_json);
 /// -- end D3 code
 
 // create output files
-const svg2png = require('svg2png');
+const SVGtoPDF = require('svg-to-pdfkit');
 
-fs.writeFile(outputHtmlFilename, d3n.html(), function () {
-  console.log('>> Done. Open '+outputHtmlFilename+'" in a web browser');
-});
+
+const svg2png = require('svg2png');
 
 var svg_string = d3n.svgString();
 fs.writeFile(outputSvgFilename, svg_string, function () {

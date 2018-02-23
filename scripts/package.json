@@ -19,6 +19,7 @@
     "d3-scale": "^1.0.4",
     "fs": "0.0.1-security",
     "path": "^0.12.7",
+    "svg-to-pdfkit": "^0.1.7",
     "svg2png": "^4.0.0",
     "yargs": "^6.5.0"
   }
