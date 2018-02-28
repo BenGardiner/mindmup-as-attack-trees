@@ -73,6 +73,16 @@ def emit_tree_snapshot(title, node):
 	f1.close()
 	return
 
+def cut_and_copy(cuts, node, tops, seconds):
+	working_title = node.get('title', None)
+	working_title = working_title.replace('Objective: ', '')
+	if not is_outofscope(node):
+		new_node = copy.deepcopy(node)
+		update_raw_description(new_node, "This objective's severity and other details are covered in section *Attacker Objective Node %s*, above. Please see that section for more details. In this section, we will examine the Attacker Methods and intermediate nodes below it down to the attack vectors in detail." % working_title)
+		if not args.only_objectives: # don't bother descending the tree in --only-objectives
+			seconds.append(new_node)
+	return
+
 def emit_only_attacker_objective_section(cuts, node, tops, seconds):
 	if is_cut(node, cuts):
 		if is_objective(node):
@@ -86,11 +96,7 @@ def emit_only_attacker_objective_section(cuts, node, tops, seconds):
 			print("\n%s" % description)
 			#deep copy node
 			#change node description to "This objective's severity and other details are covered in section *Attack Objective Node %s*, above. Please see that section for more details. In this section we will examine the Attacker Methods and intermediate nodes below it down to the attack vectors in detail.
-			if not is_outofscope(node):
-				new_node = copy.deepcopy(node)
-				update_raw_description(new_node, "This objective's severity and other details are covered in section *Attacker Objective Node %s*, above. Please see that section for more details. In this section, we will examine the Attacker Methods and intermediate nodes below it down to the attack vectors in detail." % working_title)
-				if not args.only_objectives: # don't bother descending the tree in --only-objectives
-					seconds.append(new_node)
+			cut_and_copy(cuts, node, tops, seconds)
 		else:
 			tops.append(node)
 		return
@@ -284,11 +290,15 @@ def do_tops():
 		add_graphic(node, title)
 		print("\n%s" % get_description(node))
 
-		local_tops = list()
-		for child in get_node_children(node):
-			emit_only_attacker_objective_section(cuts, child, local_tops, seconds)
-		local_tops.extend(tops)
-		tops = local_tops
+		if not is_objective(node):
+			local_tops = list()
+			for child in get_node_children(node):
+				emit_only_attacker_objective_section(cuts, child, local_tops, seconds)
+			local_tops.extend(tops)
+			tops = local_tops
+		else:
+			# the root node *is* an objective and we need to cut here.
+			cut_and_copy(cuts, node, tops, seconds)
 
 	if len(tops) > 0 or len(seconds) > 0:
 		print("\n\n%s Attack Trees: Attacker Methods Etc." % ('#' * 1))
