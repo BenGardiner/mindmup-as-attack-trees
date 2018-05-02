@@ -3,14 +3,7 @@
 import sys,json
 from mindmup_as_attack_trees import *
 
-def do_ideas(node):
-	for key, value in iter(sorted(node.get('ideas', dict()).iteritems())):
-		trim_label(value)
-	return
-
 def trim_label(node):
-	do_ideas(node)
-
 	if node.get('title', None) == 'AND' or node.get('title', None) == 'OR':
 		return
 
@@ -49,7 +42,8 @@ if 'id' in data and data['id'] == 'root':
 	root_node = data['ideas']['1']
 else:
 	root_node = data
-do_ideas(root_node)
+
+apply_each_node(root_node, trim_label)
 
 normalize_nodes(root_node)
 str = json.dumps(data, indent=2, sort_keys=False)
