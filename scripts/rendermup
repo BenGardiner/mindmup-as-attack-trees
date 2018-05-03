@@ -27,6 +27,12 @@ const argv = yargs
         describe: "render the tree with all leaves at the right (i.e. cluster/dendrogram layout)",
         default: "false"
     })
+    .option({
+        alias: "darkbg",
+        type: "boolean",
+        describe: "render for a dark background",
+        default: "false"
+    })
     .help(false)
     .argv;
 
@@ -442,6 +448,13 @@ do_draw = function(json) {
 
   node.append("text")
       .attr("dy", 3)
+      .attr("fill", function(d) {
+          if (argv.darkbg) {
+            return "#ffffff";
+          } else {
+            return "#000000";
+          }
+      })
       .attr("x", function(d) { return d.children ? -8 : 8; })
       .style("text-anchor", function(d) {
           if (d.parent === null) {
