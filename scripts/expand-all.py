@@ -30,7 +30,13 @@ else:
 
 data = json.load(fd_in)
 
-fd_in.close()
+if args.mupin is None:
+	fd_out = sys.stdout
+else:
+	fd_in.close()
+	fd_out=open(args.mupin,'w')
+
+nodes_context=list()
 
 if 'id' in data and data['id'] == 'root':
 	#version 2 mindmup
@@ -38,9 +44,19 @@ if 'id' in data and data['id'] == 'root':
 else:
 	root_node = data
 
-concrete_nodes_lookup = build_nodes_lookup(root_node)
+def expand_node(node):
+	set_expanded(node)
+	return
 
-for key, node in concrete_nodes_lookup.iteritems():
-	if not is_mitigation(node):
-		print("%s" % get_node_title(node))
+apply_each_node(root_node, expand_node)
+
+normalize_nodes(root_node)
+str = json.dumps(data, indent=2, sort_keys=False)
+str = re.sub(r'\s+$', '', str, 0, re.M)
+str = re.sub(r'\s+$', '', str, flags=re.M)
+
+fd_out.write(str)
+
+if len(sys.argv) >= 1:
+	fd_out.close()
 

@@ -270,6 +270,64 @@ def groom_forward_references(root):
 	apply_last_each_node(root, maybe_swap)
 	return
 
+def rectify_ids(root):
+	#python 2.x closure madness
+	class ctx:
+		id_count = 1
+	def rectify(node):
+		node_id = node.get("id", None)
+		if not node_id is None:
+			node.update({'id': ctx.id_count})
+			ctx.id_count = ctx.id_count + 1
+		return
+
+	apply_each_node(root, rectify)
+	return
+
+def extract_subtree(root, subtree_root_name):
+	concrete_nodes_lookup = build_nodes_lookup(root)
+
+	subtree_root = concrete_nodes_lookup.get(subtree_root_name)
+	if subtree_root is None:
+		raise ValueError("couldn't find subtree root \"%s\"" % subtree_root_name)
+
+	def resolve(node):
+		if is_node_not_for_lookup(node):
+			return False
+
+		if not is_node_a_reference(node):
+			return False
+
+		node_referent_title = get_node_referent_title(node)
+		referent = concrete_nodes_lookup.get(node_referent_title)
+		if referent is None:
+			raise ValueError("couldn't find referent for \"%s\"" % node_referent_title)
+
+		tmp = copy.deepcopy(node)
+
+		node.clear()
+		node.update(referent)
+		if not is_node_a_leaf(node):
+			set_collapsed(node)
+
+		# one level is enough
+		# for child in get_node_children(node):
+		# 	apply_last_each_node(child, resolve)
+
+		return True
+
+	def apply_last_each_node(root, fn):
+		for child in get_node_children(root):
+			apply_last_each_node(child, fn)
+		fn(root)
+		return
+
+	subtree_root_copy = copy.deepcopy(subtree_root)
+	apply_last_each_node(subtree_root_copy, resolve)
+	rectify_ids(subtree_root_copy)
+
+	return subtree_root_copy
+
 def dedup_with_references(root):
 	has_been_seen = dict()
 

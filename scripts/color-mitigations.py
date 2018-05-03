@@ -30,7 +30,13 @@ else:
 
 data = json.load(fd_in)
 
-fd_in.close()
+if args.mupin is None:
+	fd_out = sys.stdout
+else:
+	fd_in.close()
+	fd_out=open(args.mupin,'w')
+
+nodes_context=list()
 
 if 'id' in data and data['id'] == 'root':
 	#version 2 mindmup
@@ -38,9 +44,30 @@ if 'id' in data and data['id'] == 'root':
 else:
 	root_node = data
 
-concrete_nodes_lookup = build_nodes_lookup(root_node)
+light_green='#82EE7E'
+green='#008000'
+dark_green='#0B5400'
 
-for key, node in concrete_nodes_lookup.iteritems():
-	if not is_mitigation(node):
-		print("%s" % get_node_title(node))
+def color_mitigations(node):
+	if 'Mitigation: ' in get_node_title(node):
+		if is_outofscope(node):
+			set_background_color(node, dark_green)
+			return
+		if is_node_a_reference(node):
+			set_background_color(node, light_green)
+			return
+		set_background_color(node, green)
+	return
+
+apply_each_node(root_node, color_mitigations)
+
+normalize_nodes(root_node)
+str = json.dumps(data, indent=2, sort_keys=False)
+str = re.sub(r'\s+$', '', str, 0, re.M)
+str = re.sub(r'\s+$', '', str, flags=re.M)
+
+fd_out.write(str)
+
+if len(sys.argv) >= 1:
+	fd_out.close()
 
