@@ -340,6 +340,11 @@ do_draw = function(json) {
     return description;
   }
 
+  function is_collapsed(d) {
+    collapsed = (d.data.attr || {}).collapsed || false;
+    return collapsed;
+  }
+  
   function get_title(d) {
     return d.data.title || '';
   }
@@ -412,7 +417,7 @@ do_draw = function(json) {
           return apt_colormap(d.data.attr.evita_apt);
       })
       .attr("fill", function(d) {
-        if (is_reference(d)) {
+        if (is_reference(d) || is_collapsed(d)) {
           return "#ffffff";
         }
         if (is_attack_vector(d)) {
