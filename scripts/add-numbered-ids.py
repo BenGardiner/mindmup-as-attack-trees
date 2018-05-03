@@ -68,10 +68,14 @@ def process_secondpass(node):
 	working_title = node.get('title', '')
 	if is_node_a_reference(node):
 		referent_node = nodes_lookup.get(get_node_referent_title(node), None)
-		working_title = working_title.replace('(*)', '')
-		working_title = "%s(%s)" % (working_title, referent_node.get('coords'))
+		if not referent_node is None:
+			working_title = working_title.replace('(*)', '')
+			working_title = "%s(%s)" % (working_title, referent_node.get('coords'))
 	else:
-		working_title = "%s %s" % (node.get('coords'), working_title)
+		if not is_collapsed(node):
+			working_title = "%s %s" % (node.get('coords'), working_title)
+		else:
+			working_title = "%s (%s)" % (working_title, node.get('coords'))
 
 	if not node.get('title', None).startswith(working_title):
 		node.update({'title': working_title})
