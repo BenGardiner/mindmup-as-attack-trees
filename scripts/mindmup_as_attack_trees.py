@@ -851,6 +851,8 @@ def normalize_nodes(root_node):
 
 			if len(node.get('attr')) == 0:
 				node.pop('attr')
+
+			#TODO: remove empty descriptions
 		return
 
 	nodes = root_node
