@@ -280,8 +280,8 @@ do_draw = function(json) {
           })
         }
         return "M" + d.parent.y + "," + d.parent.x
-            + "l" + Math.abs(this_childs_index) + "," + this_childs_index
-            + "H" + elbow_point
+            + "l" + Math.abs(this_childs_index) + "," + this_childs_index /*TODO: fix glitch when corner is directly vertically above the node*/
+            + "H" + Math.max(elbow_point, d.parent.y + Math.abs(this_childs_index))
             + "V" + d.x + "H" + d.y;
       });
 
