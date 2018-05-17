@@ -33,6 +33,12 @@ const argv = yargs
         describe: "render on a dark background",
         default: "false"
     })
+    .option("b", {
+        alias: "bold",
+        type: "boolean",
+        describe: "render bold lines and text",
+        default: "false"
+    })
     .help(false)
     .argv;
 
@@ -228,11 +234,23 @@ do_draw = function(json) {
             typeof d.data.attr.evita_apt !== 'undefined') {
           return apt_colormap(d.data.attr.evita_apt);
         } else {
-          return "#d3d3d3";
+          return "#a3a3a3";
         }
       })
-      .attr("stroke-width", "1.5px")
-      .attr("stroke-opacity", "0.7")
+      .attr("stroke-width", function(d) {
+        if (argv.bold) {
+          return "3.5px";
+        } else {
+          return "1.5px";
+        }
+      })
+      .attr("stroke-opacity", function(d) {
+        if (argv.bold) {
+          return "0.9";
+        } else {
+          return "0.7";
+        }
+      })
       .attr("fill", "none")
       .attr("d", function(d) {
         elbow_point = (d.parent.y + 6*(d.y - d.parent.y) / 10)
@@ -308,8 +326,18 @@ do_draw = function(json) {
             y = -6;
           }
 
-          var tspan = text.text(null).append("tspan").attr("x", x).attr("y", y).attr("dy", dy + "em")
-            .attr("font-size", "10px").attr("font-family", "sans-serif");
+          var tspan = text.text(null)
+            .append("tspan")
+            .attr("x", x).attr("y", y).attr("dy", dy + "em")
+            .attr("font-weight", function(d) {
+              if (argv.bold) {
+                return "bold";
+              } else {
+                return "normal";
+              }
+            })
+            .attr("font-size", "10px")
+            .attr("font-family", "sans-serif");
 
           if (is_out_of_scope(node)) {
             tspan.attr("text-decoration", "line-through")
@@ -321,8 +349,18 @@ do_draw = function(json) {
                   line.pop();
                   tspan.text(line.join(" "));
                   line = [word];
-                  tspan = text.append("tspan").attr("x", x).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em")
-                    .attr("font-size", "10px").attr("font-family", "sans-serif");
+                  tspan = text.append("tspan")
+                    .attr("x", x).attr("y", y)
+                    .attr("dy", ++lineNumber * lineHeight + dy + "em")
+                    .attr("font-weight", function(d) {
+                      if (argv.bold) {
+                        return "bold";
+                      } else {
+                        return "normal";
+                      }
+                    })
+                    .attr("font-size", "10px")
+                    .attr("font-family", "sans-serif");
                   if (is_out_of_scope(node)) {
                     tspan.attr("text-decoration", "line-through")
                   }
@@ -422,6 +460,13 @@ do_draw = function(json) {
         if (typeof d.data.attr !== 'undefined')
           return apt_colormap(d.data.attr.evita_apt);
       })
+      .attr("stroke-width", function(d) {
+        if (argv.bold) {
+          return "3.0px";
+        } else {
+          return "1.5px";
+        }
+      })
       .attr("fill", function(d) {
         if (is_reference(d) || is_collapsed(d)) {
           return "#ffffff";
@@ -436,6 +481,13 @@ do_draw = function(json) {
   node.filter(function (d) { return is_mitigation(d); })
       .append("rect")
       .attr("stroke", "#00d300")
+      .attr("stroke-width", function(d) {
+        if (argv.bold) {
+          return "3.0px";
+        } else {
+          return "1.5px";
+        }
+      })
       .attr("fill", function(d) {
         if (is_reference(d)) {
           return "none";
