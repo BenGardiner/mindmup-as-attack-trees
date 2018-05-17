@@ -317,6 +317,7 @@ do_draw = function(json) {
           }
           if (text.datum().parent === null) {
             x = x - margin.left;
+            alignmentBase = 'hanging';
           }
 
           y = 3;
