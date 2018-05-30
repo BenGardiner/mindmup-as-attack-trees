@@ -253,17 +253,23 @@ do_draw = function(json) {
       })
       .attr("fill", "none")
       .attr("d", function(d) {
+        if (argv.bold) {
+          stroke_width = 3.5;
+        } else {
+          stroke_width = 1.5;
+        }
+
         elbow_point = (d.parent.y + 6*(d.y - d.parent.y) / 10)
 
         if (argv.r) {
-          elbow_point = d.parent.y;
-
           if (d.parent.parent === null) {
             var min_y = d.y;
             d.parent.children.forEach(function(entry){
               min_y = Math.min(min_y, entry.y);
             })
-            elbow_point = (d.parent.y + (min_y - d.parent.y) / 2)
+            elbow_point = (d.parent.y + (min_y - d.parent.y) / 2);
+          } else {
+            elbow_point = d.parent.y + Math.max(0, d.parent.children.length - 2) * 2 * stroke_width + 0.5;
           }
         }
 
@@ -275,13 +281,13 @@ do_draw = function(json) {
           d.parent.children.forEach(function(entry){
             count = count + 1;
             if (entry == d && d.parent.children.length > 1) {
-              this_childs_index = (count - siblings_count / 2.0 - 0.5) * 2.0
+              this_childs_index = (count - siblings_count / 2.0 - 0.5) * (stroke_width + 0.5)
            }
           })
         }
         return "M" + d.parent.y + "," + d.parent.x
-            + "l" + Math.abs(this_childs_index) + "," + this_childs_index /*TODO: fix glitch when corner is directly vertically above the node*/
-            + "H" + Math.max(elbow_point, d.parent.y + Math.abs(this_childs_index))
+            + "l" + Math.abs(this_childs_index) + "," + this_childs_index
+            + "H" + Math.max(elbow_point - Math.abs(this_childs_index), d.parent.y + Math.abs(this_childs_index))
             + "V" + d.x + "H" + d.y;
       });
 
