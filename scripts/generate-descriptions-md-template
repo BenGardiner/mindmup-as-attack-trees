@@ -270,7 +270,7 @@ def add_graphic(node, title):
 	emit_tree_snapshot(title, node)
 	print("\n![*%s Attack Subtree*](%s.png)%s" % (title, get_safe_filename(title), "{ width=100% }" if args.for_pandoc else ""))
 
-def do_tops():
+def do_tops(root):
 	global tops
 	global seconds
 	global cuts
@@ -309,6 +309,10 @@ def do_tops():
 			node = tops.pop(0)
 		else:
 			node = seconds.pop(0)
+
+		if get_node_title(node) == get_node_title(root): # in the special case where the only attacker objective is the top-of-tree, don't emit it again right after considering it already in its own attacker objective section
+			emit_only_attacker_methods_section(depth, cuts, node)
+			continue
 
 		title = get_node_title(node)
 
@@ -355,5 +359,5 @@ else:
 
 nodes_lookup = build_nodes_lookup(root)
 tops.append(root)
-do_tops()
+do_tops(root)
 

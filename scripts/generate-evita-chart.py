@@ -176,11 +176,12 @@ apply_each_node(root_node, remove_override_apt)
 propagate_all_the_apts(root_node, nodes_lookup)
 derive_node_risks(root_node)
 
-print("\n\n# EVITA Risk Analysis: Per-Objective Mitigation Lists")
-print("\n In this section, we will list the mitigations that are relevant for each attacker objective, in turn. By 'relevant' we mean those mitigations that were found to be attached to any attack vectors underneath the attacker objective in the attack trees -- including subtrees, which are included-by-reference. The mitigations here are listed again in priority order, keeping the same global impact as previously discussed. This has the desirable effect of showing which mitigations are most useful for stopping a given attacker objective while simultaneously keeping those mitigations that will have the highest overall return-on-investment at the top of the list.")
-for objective in objectives:
-	if not is_outofscope(objective):
-		print("\n\n### Mitigations for Attacker Objective Node %s" % get_node_title(objective))
-		objective_node = objective
-		do_each_riskpoint(objective, nodes_lookup)
+if len(objectives) > 1:
+	print("\n\n# EVITA Risk Analysis: Per-Objective Mitigation Lists")
+	print("\n In this section, we will list the mitigations that are relevant for each attacker objective, in turn. By 'relevant' we mean those mitigations that were found to be attached to any attack vectors underneath the attacker objective in the attack trees -- including subtrees, which are included-by-reference. The mitigations here are listed again in priority order, keeping the same global impact as previously discussed. This has the desirable effect of showing which mitigations are most useful for stopping a given attacker objective while simultaneously keeping those mitigations that will have the highest overall return-on-investment at the top of the list.")
+	for objective in objectives:
+		if not is_outofscope(objective):
+			print("\n\n### Mitigations for Attacker Objective Node %s" % get_node_title(objective))
+			objective_node = objective
+			do_each_riskpoint(objective, nodes_lookup)
 
