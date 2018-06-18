@@ -44,8 +44,8 @@ def parse_evita_raps(node):
 		attr = node.get('attr')
 		
 		if len(evita_line) != 10:
-			print ("EVITA:: tag should have exactly 9 elements in attack vector node", node,"where it only has",len(evita_line)-1)
-			raise ValueError("EVITA:: tag should have exactly 9 elements in attack vector node", node,"where it only has",len(evita_line)-1)
+			print ("EVITA:: tag should have exactly 9 elements in attack vector node %s where it only has %s" % (node,len(evita_line)-1))
+			raise ValueError("EVITA:: tag should have exactly 9 elements in attack vector node %s where it only has %s" % (node,len(evita_line)-1))
 		
 		attr.update({'evita_et': clamp_to_json_values(float(evita_line[5]))})
 		attr.update({'evita_e':  clamp_to_json_values(float(evita_line[6]))})
