@@ -42,7 +42,11 @@ def parse_evita_raps(node):
 		    node.update({'attr': dict()})
 
 		attr = node.get('attr')
-
+		
+		if len(evita_line) != 10:
+			print ("EVITA:: tag should have exactly 9 elements in attack vector node %s where it only has %s" % (node,len(evita_line)-1))
+			raise ValueError("EVITA:: tag should have exactly 9 elements in attack vector node %s where it only has %s" % (node,len(evita_line)-1))
+		
 		attr.update({'evita_et': clamp_to_json_values(float(evita_line[5]))})
 		attr.update({'evita_e':  clamp_to_json_values(float(evita_line[6]))})
 		attr.update({'evita_k':  clamp_to_json_values(float(evita_line[7]))})
@@ -176,6 +180,7 @@ def derive_evita_apt(node):
 	#TODO support non-zero controllability
 
 	attrs.update({'evita_apt': apt})
+	update_node_apt_colour(node, apt)
 	return
 
 def get_evita_ss_label(node):
