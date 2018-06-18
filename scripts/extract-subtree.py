@@ -10,6 +10,7 @@ import argparse
 parser = argparse.ArgumentParser()
 
 parser.add_argument('mupin', nargs='?', help="the mindmup file that will be processed -- transforming and augmenting the JSON")
+parser.add_argument('subtree_name', nargs='?', help="name of the subtree root to extract")
 args = parser.parse_args()
 
 import ipdb
@@ -18,11 +19,6 @@ def info(type, value, tb):
 
 sys.excepthook = info
 
-levels_count = dict()
-nodes_lookup = dict()
-fixups_queue = list()
-objective_node = None
-
 if args.mupin is None:
 	fd_in=sys.stdin
 else:
@@ -30,6 +26,7 @@ else:
 
 data = json.load(fd_in)
 
+fd_out = sys.stdout
 fd_in.close()
 
 if 'id' in data and data['id'] == 'root':
@@ -38,9 +35,12 @@ if 'id' in data and data['id'] == 'root':
 else:
 	root_node = data
 
-concrete_nodes_lookup = build_nodes_lookup(root_node)
+subtree_root = extract_subtree(root_node, args.subtree_name)
 
-for key, node in concrete_nodes_lookup.iteritems():
-	if not is_mitigation(node):
-		print("%s" % get_node_title(node))
+normalize_nodes(subtree_root)
+str = json.dumps(subtree_root, indent=2, sort_keys=False)
+str = re.sub(r'\s+$', '', str, 0, re.M)
+str = re.sub(r'\s+$', '', str, flags=re.M)
+
+fd_out.write(str)
 

@@ -29,7 +29,12 @@ else:
 	fd_in=open(args.mupin, 'r')
 
 data = json.load(fd_in)
-fd_in.close()
+
+if args.mupin is None:
+	fd_out = sys.stdout
+else:
+	fd_in.close()
+	fd_out=open(args.mupin,'w')
 
 nodes_context=list()
 
@@ -39,22 +44,29 @@ if 'id' in data and data['id'] == 'root':
 else:
 	root_node = data
 
-list_of_mitigations = list()
-def list_mitigation(node):
-	global list_of_mitigations
-	if is_mitigation(node) and not is_node_a_reference(node):
-		list_of_mitigations.append(get_node_title(node))
+def collapse_if_TODO(node):
+	if 'TODO' in get_node_title(node):
+		set_background_color(node, '#FF0000')
+		if not is_node_a_leaf(node):
+			set_collapsed(node)
 	return
 
-apply_each_node(root_node, list_mitigation)
+def collapse_if_dothidden(node):
+	if '.hidden' in get_node_title(node) and not is_node_a_leaf(node):
+		set_collapsed(node)
+	return
 
-def remove_numbers(title):
-	modified_title = re.sub(r'^\d+\..*?\s', '', title)
-	modified_title = re.sub(r'\(\d+\..*?\)', '(*)', modified_title)
-	return modified_title
+apply_each_node(root_node, set_expanded)
+apply_each_node(root_node, collapse_if_TODO)
+apply_each_node(root_node, collapse_if_dothidden)
 
-list_of_mitigations = sorted(list_of_mitigations, key=lambda t: remove_numbers(t))
+normalize_nodes(root_node)
+str = json.dumps(data, indent=2, sort_keys=False)
+str = re.sub(r'\s+$', '', str, 0, re.M)
+str = re.sub(r'\s+$', '', str, flags=re.M)
 
-for node in list_of_mitigations:
-	print("%s" % node)
+fd_out.write(str)
+
+if len(sys.argv) >= 1:
+	fd_out.close()
 

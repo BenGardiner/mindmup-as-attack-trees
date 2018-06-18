@@ -27,6 +27,18 @@ const argv = yargs
         describe: "render the tree with all leaves at the right (i.e. cluster/dendrogram layout)",
         default: "false"
     })
+    .option("d", {
+        alias: "darkbg",
+        type: "boolean",
+        describe: "render on a dark background",
+        default: "false"
+    })
+    .option("b", {
+        alias: "bold",
+        type: "boolean",
+        describe: "render bold lines and text",
+        default: "false"
+    })
     .help(false)
     .argv;
 
@@ -34,64 +46,16 @@ const input = fs.readFileSync(argv._[0], 'utf8');
 const outputHtmlFilename = path.basename(argv._[0], ".mup") + ".html";
 const outputSvgFilename = path.basename(argv._[0], ".mup") + ".svg";
 const outputPngFilename = path.basename(argv._[0], ".mup") + ".png";
+const outputPdfFilename = path.basename(argv._[0], ".mup") + ".pdf";
 
 const styles = `
-
-.node circle {
-  fill: #999;
-}
-
-.node rect {
-  fill: #999;
-}
-
-.node text {
-  font: 10px sans-serif;
-}
-
-.node--vector_oos text {
-  text-decoration: line-through;
-}
-
-.node--internal circle {
-  stroke: #d3d3d3;
-  fill: #FFF;
-}
-
-.node--vector circle {
-  fill: #000;
-}
-
-.node--vector_ref circle {
-  stroke: #000;
-  fill: #FFF;
-}
-
-.node--vector_oos circle {
-  fill: #000;
-}
-
-.node--mitigation rect {
-  fill: #000;
-}
-
-.node--mitigation_ref rect {
-  stroke: #000;
-  fill: #FFF;
-}
-
-.link {
-  fill: none;
-  stroke: #d3d3d3;
-  stroke-opacity: 0.7;
-  stroke-width: 1.5px;
-}
-
 `;
+
+var margin = {top: 10, right: 24, bottom: 22, left: 40};
+
 markup = '<div id="container"><div id="chart"></div></div>';
 //markup = '<meta http-equiv="refresh" content="3">' + markup;
-var options = {selector:'#chart', svgStyles:styles, container:markup, d3Module:d3};
-
+var options = {selector:'#chart', styles:styles, container:markup, d3Module:d3};
 var d3n = new D3Node(options);
 
 ///-- start D3 code
@@ -120,8 +84,6 @@ do_draw = function(json) {
           return s.split('').reduce(charW, 0) / 2;
       };
   })();
-
-  var margin = {top: 10, right: 24, bottom: 22, left: 40};
 
   var text_line_height = 10 * 1.1;
   var node_width_size;
@@ -265,26 +227,49 @@ do_draw = function(json) {
     .data(tree_data)
     .enter().append("path")
       .attr("class", "link")
-      .style("stroke", function(d) {
+      .attr("stroke", function(d) {
         if (typeof d.parent.data.attr !== 'undefined' &&
             typeof d.parent.data.attr.evita_apt !== 'undefined' &&
             typeof d.data.attr !== 'undefined' &&
             typeof d.data.attr.evita_apt !== 'undefined') {
           return apt_colormap(d.data.attr.evita_apt);
+        } else {
+          return "#a3a3a3";
         }
       })
+      .attr("stroke-width", function(d) {
+        if (argv.bold) {
+          return "3.5px";
+        } else {
+          return "1.5px";
+        }
+      })
+      .attr("stroke-opacity", function(d) {
+        if (argv.bold) {
+          return "0.9";
+        } else {
+          return "0.7";
+        }
+      })
+      .attr("fill", "none")
       .attr("d", function(d) {
+        if (argv.bold) {
+          stroke_width = 3.5;
+        } else {
+          stroke_width = 1.5;
+        }
+
         elbow_point = (d.parent.y + 6*(d.y - d.parent.y) / 10)
 
         if (argv.r) {
-          elbow_point = d.parent.y;
-
           if (d.parent.parent === null) {
             var min_y = d.y;
             d.parent.children.forEach(function(entry){
               min_y = Math.min(min_y, entry.y);
             })
-            elbow_point = (d.parent.y + (min_y - d.parent.y) / 2)
+            elbow_point = (d.parent.y + (min_y - d.parent.y) / 2);
+          } else {
+            elbow_point = d.parent.y + Math.max(0, d.parent.children.length - 2) * 2 * stroke_width + 0.5;
           }
         }
 
@@ -296,13 +281,13 @@ do_draw = function(json) {
           d.parent.children.forEach(function(entry){
             count = count + 1;
             if (entry == d && d.parent.children.length > 1) {
-              this_childs_index = (count - siblings_count / 2.0 - 0.5) * 2.0
+              this_childs_index = (count - siblings_count / 2.0 - 0.5) * (stroke_width + 0.5)
            }
           })
         }
         return "M" + d.parent.y + "," + d.parent.x
             + "l" + Math.abs(this_childs_index) + "," + this_childs_index
-            + "H" + elbow_point
+            + "H" + Math.max(elbow_point - Math.abs(this_childs_index), d.parent.y + Math.abs(this_childs_index))
             + "V" + d.x + "H" + d.y;
       });
 
@@ -338,6 +323,7 @@ do_draw = function(json) {
           }
           if (text.datum().parent === null) {
             x = x - margin.left;
+            alignmentBase = 'hanging';
           }
 
           y = 3;
@@ -347,8 +333,22 @@ do_draw = function(json) {
             y = -6;
           }
 
-          var tspan = text.text(null).append("tspan").attr("x", x).attr("y", y).attr("dy", dy + "em");
+          var tspan = text.text(null)
+            .append("tspan")
+            .attr("x", x).attr("y", y).attr("dy", dy + "em")
+            .attr("font-weight", function(d) {
+              if (argv.bold) {
+                return "bold";
+              } else {
+                return "normal";
+              }
+            })
+            .attr("font-size", "10px")
+            .attr("font-family", "sans-serif");
 
+          if (is_out_of_scope(node)) {
+            tspan.attr("text-decoration", "line-through")
+          }
           while (word = words.pop()) {
               line.push(word);
               tspan.text(line.join(" "));
@@ -356,7 +356,23 @@ do_draw = function(json) {
                   line.pop();
                   tspan.text(line.join(" "));
                   line = [word];
-                  tspan = text.append("tspan").attr("x", x).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em").text(word); //TODO: don't use dy -- it is making glitches in jsdom; instead increment by 1.1* font size in px (assume 10 for now)
+                  tspan = text.append("tspan")
+                    .attr("x", x).attr("y", y)
+                    .attr("dy", ++lineNumber * lineHeight + dy + "em")
+                    .attr("font-weight", function(d) {
+                      if (argv.bold) {
+                        return "bold";
+                      } else {
+                        return "normal";
+                      }
+                    })
+                    .attr("font-size", "10px")
+                    .attr("font-family", "sans-serif");
+                  if (is_out_of_scope(node)) {
+                    tspan.attr("text-decoration", "line-through")
+                  }
+
+                  tspan.text(word); //TODO: don't use dy -- it is making glitches in jsdom; instead increment by 1.1* font size in px (assume 10 for now)
                   ++createdLineCount;
               }
           }
@@ -375,6 +391,11 @@ do_draw = function(json) {
     return description;
   }
 
+  function is_collapsed(d) {
+    collapsed = (d.data.attr || {}).collapsed || false;
+    return collapsed;
+  }
+  
   function get_title(d) {
     return d.data.title || '';
   }
@@ -411,7 +432,8 @@ do_draw = function(json) {
   }
 
   function is_out_of_scope(d) {
-    return /out of scope/i.test(get_raw_description(d));
+    description = get_raw_description(d);
+    return (/out of scope/i.test(description) || /OUT_OF_SCOPE::/.test(description));
   }
 
   var node = g.selectAll(".node")
@@ -435,44 +457,91 @@ do_draw = function(json) {
         } else {
           return "node node--internal";
         }
-        return "node node--internal"; 
+        return "node node--internal";
       })
       .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
 
-  node.append("circle")
-      .filter(function (d) { return ! is_mitigation(d); })
-      .style("stroke", function(d) {
+  node.filter(function (d) { return ! is_mitigation(d); })
+      .append("circle")
+      .attr("stroke", function(d) {
         if (typeof d.data.attr !== 'undefined')
           return apt_colormap(d.data.attr.evita_apt);
+      })
+      .attr("stroke-width", function(d) {
+        if (argv.bold) {
+          return "3.0px";
+        } else {
+          return "1.5px";
+        }
+      })
+      .attr("fill", function(d) {
+        if (is_reference(d) || is_collapsed(d)) {
+          return "#ffffff";
+        }
+        if (is_attack_vector(d)) {
+          return "#000000";
+        }
+        return "#ffffff";
       })
       .attr("r", 2.5);
 
-  node.append("rect")
-      .filter(function (d) { return is_mitigation(d); })
-      .style("stroke", function(d) {
-        if (typeof d.data.attr !== 'undefined')
-          return apt_colormap(d.data.attr.evita_apt);
+  node.filter(function (d) { return is_mitigation(d); })
+      .append("rect")
+      .attr("stroke", "#00d300")
+      .attr("stroke-width", function(d) {
+        if (argv.bold) {
+          return "3.0px";
+        } else {
+          return "1.5px";
+        }
       })
+      .attr("fill", function(d) {
+        if (is_reference(d)) {
+          return "none";
+        }
+        return "#00ff00";
+      })
+      .attr("y", -2.5)
       .attr("width", 5.0)
-      .attr("heigth", 5.0);
+      .attr("height", 5.0);
 
   node.append("text")
       .attr("dy", 3)
+      .attr("fill", function(d) {
+          if (argv.darkbg) {
+            return "#ffffff";
+          } else {
+            return "#000000";
+          }
+      })
       .attr("x", function(d) { return d.children ? -8 : 8; })
+      .attr("fill", function(d) {
+        if (argv.darkbg) {
+          return "#ffffff";
+        } else {
+          return "#000000";
+        }
+      })
       .style("text-anchor", function(d) {
           if (d.parent === null) {
             return "start";
           }
-          return (is_attack_vector(d) || is_mitigation(d)) ? "start" : "middle";
+          if (is_leaf(d)) {
+            return "start";
+          }
+          return "middle";
       })
       .style("alignment-baseline", function(d) {
-          if (d.data.title === "AND") {
+          if (d.data.title === "AND" || d.data.title === "OR") {
             return "middle";
           }
           if (d.parent === null) {
             return "ideographic";
           }
-          return (is_attack_vector(d) || is_mitigation(d)) ? "baseline" : "hanging";
+          if (is_leaf(d)) {
+            return "baseline";
+          }
+          return "hanging";
       })
       .text(function(d) { return d.data.title; })
       .call(d3TextWrap, text_wrap_width, 0, 0);
@@ -489,19 +558,39 @@ do_draw(mindmup_json);
 /// -- end D3 code
 
 // create output files
-const svg2png = require('svg2png');
+var svg_string = d3n.svgString();
+var svgBuffer = new Buffer(svg_string, 'utf-8');
 
-fs.writeFile(outputHtmlFilename, d3n.html(), function () {
-  console.log('>> Done. Open '+outputHtmlFilename+'" in a web browser');
+var PDFDocument = require('pdfkit'),
+    SVGtoPDF = require('svg-to-pdfkit');
+
+var pdf_doc = new PDFDocument({
+      'size': [total_width - margin.right, total_height - margin.bottom],
+      'margin': 0
+    }),
+    pdf_stream = fs.createWriteStream(outputPdfFilename);
+
+SVGtoPDF(pdf_doc, svg_string, 0, 0, {
+  'assumePt': true
 });
 
-var svg_string = d3n.svgString();
+pdf_doc.page.dictionary.data.CropBox = [0, 0, total_width, total_height]
+pdf_doc.page.dictionary.data.TrimBox = [0, 0, total_width, total_height]
+pdf_doc.page.dictionary.data.BleedBox = [0, 0, total_width, total_height]
+
+pdf_stream.on('finish', function() {
+  console.log('>> Exported: "'+outputPdfFilename+'"');
+});
+
+pdf_doc.pipe(pdf_stream);
+pdf_doc.end();
+
+const svg2png = require('svg2png');
+
 fs.writeFile(outputSvgFilename, svg_string, function () {
   console.log('>> Exported: "'+outputSvgFilename+'"');
 });
-
-var svgBuffer = new Buffer(svg_string, 'utf-8');
-svg2png(svgBuffer, {width: width*4})
+svg2png(svgBuffer)
   .then(buffer => fs.writeFile(outputPngFilename, buffer))
   .catch(e => console.error('ERR:', e))
   .then(err => console.log('>> Exported: "'+outputPngFilename+'"'));

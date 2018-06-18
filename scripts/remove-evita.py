@@ -4,12 +4,6 @@ import sys,json
 from bs4 import BeautifulSoup
 from mindmup_as_attack_trees import *
 
-def do_ideas(node):
-	for key, value in iter(sorted(node.get('ideas', dict()).iteritems())):
-		trim_attrs(value)
-		trim_tables(value)
-	return
-
 def trim_tables(node):
 	description = get_raw_description(node)
 
@@ -34,8 +28,6 @@ def trim_tables(node):
 
 
 def trim_attrs(node):
-	do_ideas(node)
-
 	attr = node.get('attr', dict())
 	attr.pop('evita_et','')
 	attr.pop('evita_e','')
@@ -77,7 +69,8 @@ if 'id' in data and data['id'] == 'root':
 else:
 	root_node = data
 
-trim_attrs(root_node)
+apply_each_node(root_node, trim_attrs)
+apply_each_node(root_node, trim_tables)
 
 normalize_nodes(root_node)
 str = json.dumps(data, indent=2, sort_keys=False)

@@ -44,7 +44,25 @@ if 'id' in data and data['id'] == 'root':
 else:
 	root_node = data
 
-rectify_ids(root_node)
+def hide_at_objectives(node):
+	if not is_node_a_leaf(node):
+		children = node.get('ideas')
+
+		hidden = dict()
+		hidden.update({'title': '.hidden'})
+		hidden.update({'id': 1})
+		hidden.update({'ideas': children})
+		set_collapsed(hidden)
+		hidden.get('attr').update({'style': dict()})
+		hidden.get('attr').get('style').update({'background': '#FF0000'})
+
+		node.update({'ideas': {'1' : hidden}})
+	return
+
+objectives = collect_objectives(root_node)
+for objective in objectives:
+	hide_at_objectives(objective)
+
 normalize_nodes(root_node)
 str = json.dumps(data, indent=2, sort_keys=False)
 str = re.sub(r'\s+$', '', str, 0, re.M)

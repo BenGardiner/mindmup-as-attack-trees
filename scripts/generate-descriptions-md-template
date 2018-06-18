@@ -19,6 +19,7 @@ parser.add_argument("--only-objectives", action='store_true', help="only generat
 parser.add_argument("--no-attack-classification", action='store_true', help="don't emit the sometimes noisy 'attack classification' sections for the attack vectors")
 parser.add_argument("--auto-attack-threat", action='store_true', help="create attack threat summaries automatically based on the attacker objective nodes and ignore the text in the node bodies")
 parser.add_argument("--mitigations-as-nodes", action='store_true', help="mitigations are separate nodes in this attack tree, search for them and collate them to create the sections for the report")
+parser.add_argument("--keep-mitigations-in-snapshots", action='store_true', help="keep the mitigations node in the tree snapshots", default=False)
 args = parser.parse_args()
 
 tops = list()
@@ -54,7 +55,8 @@ def emit_tree_snapshot(title, node):
 	global resources
 
 	truncated = truncate(copy.deepcopy(node), cuts, True)
-	remove_mitigations(truncated)
+	if not args.keep_mitigations_in_snapshots:
+		remove_mitigations(truncated)
 
 	#TODO: include also the 'theme' from the graphic
 	if not resources is None:
@@ -71,6 +73,16 @@ def emit_tree_snapshot(title, node):
 	f1.close()
 	return
 
+def cut_and_copy(cuts, node, tops, seconds):
+	working_title = node.get('title', None)
+	working_title = working_title.replace('Objective: ', '')
+	if not is_outofscope(node):
+		new_node = copy.deepcopy(node)
+		update_raw_description(new_node, "This objective's severity and other details are covered in section *Attacker Objective Node %s*, above. Please see that section for more details. In this section, we will examine the Attacker Methods and intermediate nodes below it down to the attack vectors in detail." % working_title)
+		if not args.only_objectives: # don't bother descending the tree in --only-objectives
+			seconds.append(new_node)
+	return
+
 def emit_only_attacker_objective_section(cuts, node, tops, seconds):
 	if is_cut(node, cuts):
 		if is_objective(node):
@@ -84,11 +96,7 @@ def emit_only_attacker_objective_section(cuts, node, tops, seconds):
 			print("\n%s" % description)
 			#deep copy node
 			#change node description to "This objective's severity and other details are covered in section *Attack Objective Node %s*, above. Please see that section for more details. In this section we will examine the Attacker Methods and intermediate nodes below it down to the attack vectors in detail.
-			if not is_outofscope(node):
-				new_node = copy.deepcopy(node)
-				update_raw_description(new_node, "This objective's severity and other details are covered in section *Attacker Objective Node %s*, above. Please see that section for more details. In this section, we will examine the Attacker Methods and intermediate nodes below it down to the attack vectors in detail." % working_title)
-				if not args.only_objectives: # don't bother descending the tree in --only-objectives
-					seconds.append(new_node)
+			cut_and_copy(cuts, node, tops, seconds)
 		else:
 			tops.append(node)
 		return
@@ -262,7 +270,7 @@ def add_graphic(node, title):
 	emit_tree_snapshot(title, node)
 	print("\n![*%s Attack Subtree*](%s.png)%s" % (title, get_safe_filename(title), "{ width=100% }" if args.for_pandoc else ""))
 
-def do_tops():
+def do_tops(root):
 	global tops
 	global seconds
 	global cuts
@@ -282,11 +290,15 @@ def do_tops():
 		add_graphic(node, title)
 		print("\n%s" % get_description(node))
 
-		local_tops = list()
-		for child in get_node_children(node):
-			emit_only_attacker_objective_section(cuts, child, local_tops, seconds)
-		local_tops.extend(tops)
-		tops = local_tops
+		if not is_objective(node):
+			local_tops = list()
+			for child in get_node_children(node):
+				emit_only_attacker_objective_section(cuts, child, local_tops, seconds)
+			local_tops.extend(tops)
+			tops = local_tops
+		else:
+			# the root node *is* an objective and we need to cut here.
+			cut_and_copy(cuts, node, tops, seconds)
 
 	if len(tops) > 0 or len(seconds) > 0:
 		print("\n\n%s Attack Trees: Attacker Methods Etc." % ('#' * 1))
@@ -297,6 +309,10 @@ def do_tops():
 			node = tops.pop(0)
 		else:
 			node = seconds.pop(0)
+
+		if get_node_title(node) == get_node_title(root): # in the special case where the only attacker objective is the top-of-tree, don't emit it again right after considering it already in its own attacker objective section
+			emit_only_attacker_methods_section(depth, cuts, node)
+			continue
 
 		title = get_node_title(node)
 
@@ -343,5 +359,5 @@ else:
 
 nodes_lookup = build_nodes_lookup(root)
 tops.append(root)
-do_tops()
+do_tops(root)
 
