@@ -42,7 +42,11 @@ def parse_evita_raps(node):
 		    node.update({'attr': dict()})
 
 		attr = node.get('attr')
-
+		
+		if len(evita_line) != 10:
+			print ("EVITA:: tag should have exactly 9 elements in attack vector node", node,"where it only has",len(evita_line)-1)
+			raise ValueError("EVITA:: tag should have exactly 9 elements in attack vector node", node,"where it only has",len(evita_line)-1)
+		
 		attr.update({'evita_et': clamp_to_json_values(float(evita_line[5]))})
 		attr.update({'evita_e':  clamp_to_json_values(float(evita_line[6]))})
 		attr.update({'evita_k':  clamp_to_json_values(float(evita_line[7]))})
@@ -165,17 +169,26 @@ def derive_evita_apt(node):
 		raise ValueError('encountered negative Total Required Attack Potential', node.get('attr'))
 	elif total_rap < 10:
 		apt = 5
+		apt_colour = "#FF0000"
 	elif total_rap < 14:
 		apt = 4
+		apt_colour = "#FF8800"
 	elif total_rap < 20:
 		apt = 3
+		apt_colour = "#FFFF00"
 	elif total_rap < 25:
 		apt = 2
+		apt_colour = "#00FF00"
 	else:
 		apt = 1
+		apt_colour = "#00FFFF"
 	#TODO support non-zero controllability
 
 	attrs.update({'evita_apt': apt})
+	if attrs.get('style', None) is None:
+	    attrs.update({'style': dict()})
+	style = attrs.get('style')
+	style.update({"background":apt_colour})
 	return
 
 def get_evita_ss_label(node):
