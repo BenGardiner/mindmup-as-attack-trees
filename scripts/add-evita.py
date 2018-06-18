@@ -169,26 +169,18 @@ def derive_evita_apt(node):
 		raise ValueError('encountered negative Total Required Attack Potential', node.get('attr'))
 	elif total_rap < 10:
 		apt = 5
-		apt_colour = "#FF0000"
 	elif total_rap < 14:
 		apt = 4
-		apt_colour = "#FF8800"
 	elif total_rap < 20:
 		apt = 3
-		apt_colour = "#FFFF00"
 	elif total_rap < 25:
 		apt = 2
-		apt_colour = "#00FF00"
 	else:
 		apt = 1
-		apt_colour = "#00FFFF"
 	#TODO support non-zero controllability
 
 	attrs.update({'evita_apt': apt})
-	if attrs.get('style', None) is None:
-	    attrs.update({'style': dict()})
-	style = attrs.get('style')
-	style.update({"background":apt_colour})
+	update_node_apt_colour(node, apt)
 	return
 
 def get_evita_ss_label(node):

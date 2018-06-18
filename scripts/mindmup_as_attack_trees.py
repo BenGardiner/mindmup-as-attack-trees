@@ -423,26 +423,27 @@ def update_node_apt(node, apt):
 	if node.get('attr', None) is None:
 		node.update({'attr': dict()})
 
-	attrs = node.get('attr')
-	attrs.update({'evita_apt': apt})
-	
-	if apt == 5:
-		apt_colour = "#FF0000"
-	elif apt == 4:
-		apt_colour = "#FF8800"
-	elif apt == 3:
-		apt_colour = "#FFFF00"
-	elif apt == 2:
-		apt_colour = "#00FF00"
-	else:
-		apt_colour = "#00FFFF"
+	node.get('attr').update({'evita_apt': apt})
+	update_node_apt_colour(node, apt)
+	return
 
+def update_node_apt_colour(node, apt):
+	if apt == 5:
+		apt_colour = '#FF0000'
+	elif apt == 4:
+		apt_colour = '#FF8800'
+	elif apt == 3:
+		apt_colour = '#FFFF00'
+	elif apt == 2:
+		apt_colour = '#00FF00'
+	else:
+		apt_colour = '#00FFFF'
+
+	attrs = node.get('attr')
 	if attrs.get('style', None) is None:
 	    attrs.update({'style': dict()})
 	style = attrs.get('style')
-	style.update({"background":apt_colour})
-
-	return
+	style.update({'background': apt_colour})
 
 def get_node_apt(root_node):
 	override_apt = list()
