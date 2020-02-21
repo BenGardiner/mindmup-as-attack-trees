@@ -26,7 +26,14 @@ objective_node = None
 
 
 def clamp_to_json_values(val):
-    return max(-1 * sys.float_info.max, min(val, sys.float_info.max))
+	# JSON doesn't have infinities, but we can use strings as long as we convert back.
+	if val == float('inf'):
+		return "Infinity"
+	elif val == float('-inf'):
+		return "-Infinity"
+	elif val == float('nan'):
+		return "NaN"
+	return val
 
 def parse_evita_raps(node):
 	if not 'EVITA::' in get_raw_description(node):
@@ -39,7 +46,7 @@ def parse_evita_raps(node):
 		evita_line = line.strip().split('|')
 
 		if node.get('attr', None) is None:
-		    node.update({'attr': dict()})
+			node.update({'attr': dict()})
 
 		attr = node.get('attr')
 		
@@ -70,7 +77,7 @@ def get_evita_et_label(node):
 		return "**17**: &lt; six months"
 	elif et == 19:
 		return "**19**: &gt; six months"
-	elif et == float('inf'):
+	elif float(et) == float('inf'):
 		return "Not Practical"
 	else:
 		return "%d unknown" % et
@@ -86,7 +93,7 @@ def get_evita_e_label(node):
 		return "**6**: Expert"
 	elif e == 8:
 		return "**8**: Multiple Experts"
-	elif e == float('inf'):
+	elif float(e) == float('inf'):
 		return "Not Practical"
 	else:
 		return "%d unknown" % e
@@ -102,7 +109,7 @@ def get_evita_k_label(node):
 		return "**7**: Sensitive"
 	elif k == 11:
 		return "**11**: Critical"
-	elif k == float('inf'):
+	elif float(k) == float('inf'):
 		return "Not Practical"
 	else:
 		return "%d unknown" % k
@@ -118,7 +125,7 @@ def get_evita_wo_label(node):
 		return "**4**: Moderate"
 	elif wo == 10:
 		return "**10**: Difficult"
-	elif wo == float('inf'):
+	elif float(wo) == float('inf'):
 		return "None"
 	else:
 		return "%d unknown" % wo
@@ -134,7 +141,7 @@ def get_evita_eq_label(node):
 		return "**7**: Bespoke"
 	elif eq == 9:
 		return "**9**: Multiple Bespoke"
-	elif eq == float('inf'):
+	elif float(eq) == float('inf'):
 		return "Not Practical"
 	else:
 		return "%d unknown" % eq
@@ -143,7 +150,7 @@ def append_evita_rap_table(node):
 	description = get_raw_description(node)
 
 	if description.endswith('|'):
-	    print("warning. node %s. don't end node description in '|''" % get_node_title(node))
+		print("warning. node %s. don't end node description in '|''" % get_node_title(node))
 
 	html = detect_html(description)
 	bookends = ("<div>", "</div>") if html else ('\n', '')
@@ -164,7 +171,8 @@ def append_evita_rap_table(node):
 def derive_evita_apt(node):
 	attrs = node.get('attr')
 
-	total_rap = attrs.get('evita_et') + attrs.get('evita_e') + attrs.get('evita_k') + attrs.get('evita_wo') + attrs.get('evita_eq')
+	total_rap = sum(map(lambda ev: float(attrs.get(ev)), ['evita_et', 'evita_e', 'evita_k', 'evita_wo', 'evita_eq']))
+
 	if total_rap < 0:
 		raise ValueError('encountered negative Total Required Attack Potential', node.get('attr'))
 	elif total_rap < 10:
@@ -256,7 +264,7 @@ def append_evita_severity_table(node):
 	html = detect_html(description)
 
 	if description.endswith('|'):
-	    print("warning. node %s. don't end node description in '|''" % get_node_title(node))
+		print("warning. node %s. don't end node description in '|''" % get_node_title(node))
 
 	bookends = ("<div>", "</div>") if html else ('\n', '')
 
@@ -284,15 +292,15 @@ def parse_evita_severities(node):
 		attr = node.get('attr')
 
 		if args.safety_privacy_financial_operational:
-		    attr.update({'evita_ss': clamp_to_json_values(float(evita_line[1]))})
-		    attr.update({'evita_ps': clamp_to_json_values(float(evita_line[2]))})
-		    attr.update({'evita_fs': clamp_to_json_values(float(evita_line[3]))})
-		    attr.update({'evita_os': clamp_to_json_values(float(evita_line[4]))})
+			attr.update({'evita_ss': clamp_to_json_values(float(evita_line[1]))})
+			attr.update({'evita_ps': clamp_to_json_values(float(evita_line[2]))})
+			attr.update({'evita_fs': clamp_to_json_values(float(evita_line[3]))})
+			attr.update({'evita_os': clamp_to_json_values(float(evita_line[4]))})
 		else:
-		    attr.update({'evita_fs': clamp_to_json_values(float(evita_line[1]))})
-		    attr.update({'evita_os': clamp_to_json_values(float(evita_line[2]))})
-		    attr.update({'evita_ps': clamp_to_json_values(float(evita_line[3]))})
-		    attr.update({'evita_ss': clamp_to_json_values(float(evita_line[4]))})
+			attr.update({'evita_fs': clamp_to_json_values(float(evita_line[1]))})
+			attr.update({'evita_os': clamp_to_json_values(float(evita_line[2]))})
+			attr.update({'evita_ps': clamp_to_json_values(float(evita_line[3]))})
+			attr.update({'evita_ss': clamp_to_json_values(float(evita_line[4]))})
 
 	return
 
@@ -314,7 +322,7 @@ def set_node_severities(node, nodes_context):
 		append_evita_severity_table(node)
 
 	for child in get_node_children(node):
-	    set_node_severities(child, nodes_context)
+		set_node_severities(child, nodes_context)
 	return
 
 if args.mupin is None:
