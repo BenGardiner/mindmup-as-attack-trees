@@ -91,7 +91,7 @@ def emit_only_attacker_objective_section(cuts, node, tops, seconds):
 			working_title = node.get('title', None)
 			working_title = working_title.replace('Objective: ', '')
 			parsed_title = re.match(r'(\d+\..*?)\s(.*?)$',working_title).groups()
-			print("\n\n%s Attacker Objective Node %s (%s)" % ( ('#' * level, parsed_title[1], parsed_title[0])))
+			print("\n\n%s Attacker Objective Node: %s (%s)" % ( ('#' * level, parsed_title[1], parsed_title[0])))
 			description = get_description(node)
 			print("\n%s" % description)
 			#deep copy node
@@ -160,7 +160,7 @@ def add_label(depth, cuts, node):
 
 		if has_mitigations:
 			level = 4
-			print("\n%s Mitigation%s Required\n" % ('#' * level, "" if len(mitigations_list) <= 1 else "s"))
+			print("\n%s Mitigation%s Suggested\n" % ('#' * level, "" if len(mitigations_list) <= 1 else "s"))
 			emit_list_of_mitigations(node)
 
 	if (not is_collapsed(node)) and (not is_attack_vector(node)):
@@ -168,13 +168,13 @@ def add_label(depth, cuts, node):
 	return
 
 def print_title_headings_for_goal_node(level, title):
-	print("\n\n%s Subtree %s" % ('#' * (level), title))
+	print("\n\n%s Subtree: %s" % ('#' * (level), title))
 
 def print_title_headings_for_intermediate_node(level, title):
-	print("\n\n%s Intermediate Node %s" % ('#' * (level), title))
+	print("\n\n%s Intermediate Node: %s" % ('#' * (level), title))
 
 def print_title_headings_for_attack_vector_node(level, title):
-	print("\n\n%s Attack Vector Node %s" % ('#' * (level), title))
+	print("\n\n%s Attack Vector Node: %s" % ('#' * (level), title))
 
 def print_other_headings(node, level, title, description):
 	global evita_tags
@@ -211,12 +211,12 @@ def print_other_headings(node, level, title, description):
 				print("\n%s Attack Threat" % ('#' * (level+1)))
 			else:
 				suppress_this_subsection=True
-		elif "# Mitigation Required".lower() in description_line.lower() or description_line.strip().lower().replace("mitigations","mitigation").endswith("Mitigation Required:".lower()):
+		elif "# Mitigation Suggested".lower() in description_line.lower() or description_line.strip().lower().replace("mitigations","mitigation").endswith("Mitigation Suggested:".lower()):
 			mitigation_heading_found=True
 			previous_blank=True
 			suppress_this_subsection=False
 			if not args.mitigations_as_nodes:
-				print("\n%s Mitigation Required" % ('#' * (level+1)))
+				print("\n%s Mitigation Suggested" % ('#' * (level+1)))
 			else:
 				suppress_this_subsection=True
 		elif description_line.strip().lower().endswith("Description:".lower()):
@@ -243,7 +243,7 @@ def print_other_headings(node, level, title, description):
 		print
 	if args.mitigations_as_nodes and (not is_outofscope(node)):
 		children = get_node_children(node)
-		print("\n%s Mitigation%s Required\n" % ('#' * (level+1), "" if len(children) <= 1 else "s"))
+		print("\n%s Mitigation%s Suggested\n" % ('#' * (level+1), "" if len(children) <= 1 else "s"))
 		if len(children) == 0:
 			print("\nNo mitigations are highlighted for this particular attack vector; the effective mitigations against attacks of the system will be on other conjunctive (AND) nodes in the attack trees.")
 		else:
@@ -332,7 +332,7 @@ def do_tops(root):
 
 		if has_mitigations:
 			level = 4
-			print("\n%s Mitigation%s Required\n" % ('#' * level, "" if len(mitigations_list) <= 1 else "s"))
+			print("\n%s Mitigation%s Suggested\n" % ('#' * level, "" if len(mitigations_list) <= 1 else "s"))
 			emit_list_of_mitigations(node)
 
 		emit_only_attacker_methods_section(depth, cuts, node)
