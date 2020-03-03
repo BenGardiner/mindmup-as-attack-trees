@@ -66,21 +66,21 @@ def get_evita_et_label(node):
 	et = node.get('attr').get('evita_et')
 
 	if et == 0:
-		return "**0**: &lt; one day"
+		return "**0**: &lt; One Day"
 	elif et == 1:
-		return "**1**: &lt; one week"
+		return "**1**: &lt; One Week"
 	elif et == 4:
-		return "**4**: &lt; one month"
+		return "**4**: &lt; One Month"
 	elif et == 10:
-		return "**10**: &lt; three months"
+		return "**10**: &lt; Three Months"
 	elif et == 17:
-		return "**17**: &lt; six months"
+		return "**17**: &lt; Six Months"
 	elif et == 19:
-		return "**19**: &gt; six months"
+		return "**19**: &gt; Six Months"
 	elif float(et) == float('inf'):
 		return "Not Practical"
 	else:
-		return "%d unknown" % et
+		return "%d Unknown" % et
 
 def get_evita_e_label(node):
 	e = node.get('attr').get('evita_e')
@@ -96,7 +96,7 @@ def get_evita_e_label(node):
 	elif float(e) == float('inf'):
 		return "Not Practical"
 	else:
-		return "%d unknown" % e
+		return "%d Unknown" % e
 
 def get_evita_k_label(node):
 	k = node.get('attr').get('evita_k')
@@ -112,7 +112,7 @@ def get_evita_k_label(node):
 	elif float(k) == float('inf'):
 		return "Not Practical"
 	else:
-		return "%d unknown" % k
+		return "%d Unknown" % k
 
 def get_evita_wo_label(node):
 	wo = node.get('attr').get('evita_wo')
@@ -128,7 +128,7 @@ def get_evita_wo_label(node):
 	elif float(wo) == float('inf'):
 		return "None"
 	else:
-		return "%d unknown" % wo
+		return "%d Unknown" % wo
 
 def get_evita_eq_label(node):
 	eq = node.get('attr').get('evita_eq')
@@ -144,7 +144,7 @@ def get_evita_eq_label(node):
 	elif float(eq) == float('inf'):
 		return "Not Practical"
 	else:
-		return "%d unknown" % eq
+		return "%d Unknown" % eq
 
 def append_evita_rap_table(node):
 	description = get_raw_description(node)
