@@ -4,7 +4,7 @@ from mindmup_as_attack_trees import *
 import sys,json
 import re
 from collections import OrderedDict
-import ipdb
+#import ipdb
 import argparse
 parser = argparse.ArgumentParser()
 

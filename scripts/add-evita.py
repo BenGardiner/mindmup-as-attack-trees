@@ -14,7 +14,7 @@ parser.add_argument('--safety-privacy-financial-operational', action='store_true
 parser.add_argument('mupin', nargs='?', help="the mindmup file that will be processed -- transforming and augmenting the JSON")
 args = parser.parse_args()
 
-import ipdb
+#import ipdb
 def info(type, value, tb):
 	ipdb.pm()
 

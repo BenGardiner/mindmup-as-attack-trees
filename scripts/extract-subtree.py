@@ -13,7 +13,7 @@ parser.add_argument('mupin', nargs='?', help="the mindmup file that will be proc
 parser.add_argument('subtree_name', nargs='?', help="name of the subtree root to extract")
 args = parser.parse_args()
 
-import ipdb
+#import ipdb
 def info(type, value, tb):
 	ipdb.pm()
 
