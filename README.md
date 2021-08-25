@@ -4,7 +4,7 @@ Python scripts for using mindmup `.mup` JSON as a medium for developing attack t
 
 # In General:
 
-1. Create an attack tree with [mindmup](https://app.mindmup.com/map/new/) -- legacy version 1 also supported.
+1. Create an attack tree with [mindmup](https://app.mindmup.com/map/new/) -- legacy version 1 also supported: you can use https://github.com/BenGardiner/legacy-mindmup for offline creation of attack trees.
 
 1. Save the `.mup` locally
 
